@@ -11,6 +11,8 @@ allData<- read.csv("regression_train_loan.csv",header= TRUE,sep = ",",quote="\""
 
 head(allData)
 
+# Feature Engineering
+
 #Remove the following:
 # 1: X
 # 2: id
@@ -27,12 +29,6 @@ head(allData)
 # 53: policy_code
 # 57: verification_status_joint
 loan <- allData[,-c(1,2,3,8,11,12,19,20,21,23,24,37,53,57)]
-
-
-
-
-# Feature Engineering
-
 
 # Missing Value Treatment
 
