@@ -7,6 +7,9 @@
 
 ########## PRELIMINARIES ##########
 
+# Understand the data:
+# https://www.kaggle.com/pragyanbo/a-hitchhiker-s-guide-to-lending-club-loan-data
+
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
@@ -40,6 +43,7 @@ loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 summary(loan)
 
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
+
 #TODO: emp_length
 #TODO: issue_d
 #TODO: addr_state ?
