@@ -52,7 +52,7 @@ loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
 #TODO: emp_length
 #TODO: issue_d
-#TODO: addr_state ?
+#TODO: addr_state ? --> Find a solution -> could doom the model - might have to be removed
 #TODO: earliest_cr_line
 #TODO: mths_since_last_deling - a lot of NAs
 #TODO: mths_since_last_record - a lot of NAs
