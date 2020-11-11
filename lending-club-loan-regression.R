@@ -24,6 +24,8 @@ head(allData)
 
 ########## FEATURE ENGINEERING ##########
 
+#TODO Remove attribute with >70% NA
+
 #Remove the following:
 # 1: X
 # 2: id
@@ -43,6 +45,10 @@ loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 summary(loan)
 
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
+
+## define how to clean the following datapoints:
+# What to do with dates? convert to year -> YYYY
+# convert string fields to number fields
 
 #TODO: emp_length
 #TODO: issue_d
@@ -65,6 +71,9 @@ loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
 ########## MISSING VALUE TREATMENT ##########
 
+# TODO: List attributes that need missing value treatment and are important for the analysis
+
+
 
 ########## SPLITTING TEST/TRAINING DATA ##########
 
@@ -73,7 +82,8 @@ loan.Train <- loan[train,] # training data
 loan.Test <- loan[-train,] # test data
 
 
-########## SUBSET SELECTION ##########
+########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
+
 
 # Best Subset Selection
 library("leaps")
