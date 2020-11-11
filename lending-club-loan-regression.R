@@ -13,7 +13,7 @@
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
-setwd("C:\Users\roman\Desktop\FHNW\Data Science\Assignment") #Roman
+setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
 
 set.seed (1)
 
