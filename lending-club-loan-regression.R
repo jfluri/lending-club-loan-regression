@@ -12,7 +12,7 @@
 
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
-setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
+setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
 setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
 
 set.seed (1)
@@ -24,8 +24,6 @@ head(allData)
 
 
 ########## FEATURE ENGINEERING ##########
-
-#TODO Remove attribute with >70% NA
 
 #Remove the following:
 # 1: X
@@ -45,10 +43,35 @@ loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 
 summary(loan)
 
+
+#TODO Remove attribute with >70% NA
+
+# in order to count NA, we first have to get rid of all blank or "n/a" (e.g. in emp_length) values.
+loan[loan==""] <- NA
+loan[loan=="n/a"] <- NA
+
+loan.column <- as.data.frame(colnames(loan))
+loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1] #store the count of NA of all columns.
+loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
+
+
+
+# convert dates to year -> YYYY
+loan$issue_d <- substr(loan$issue_d,5,8)
+loan$earliest_cr_line <- substr(loan$earliest_cr_line,5,8)
+loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
+loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
+loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
+
+
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
+#list occurrences of values in specific fields to spot anomalies, blank values, etc.
+as.data.frame(table(loan$next_pymnt_d)) 
+
 ## define how to clean the following datapoints:
-# What to do with dates? convert to year -> YYYY
+
+
 # convert string fields to number fields
 
 #TODO: emp_length
