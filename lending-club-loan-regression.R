@@ -87,11 +87,22 @@ loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
 loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
+####
+# Documentation
+# summary(loan$last_pymnt_d) --> Based on this output we changed the values to ordinal
+####
+
+# Make year values ordinal (string to ordinal)
+loan$issue_d <- factor(loan$issue_d, order = TRUE)
+loan$earliest_cr_line <- factor(loan$earliest_cr_line, order = TRUE)
+loan$last_pymnt <- factor(loan$last_pymnt, order = TRUE)
+loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
+loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
 #list occurrences of values in specific fields to spot anomalies, blank values, etc.
-as.data.frame(table(loan$next_pymnt_d)) 
+as.data.frame(table(loan$delinq_2yrs)) 
 
 ## define how to clean the following datapoints:
 
