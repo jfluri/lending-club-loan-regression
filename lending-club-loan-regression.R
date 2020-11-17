@@ -15,6 +15,7 @@ setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas PC
 setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas Laptop
 setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
+setwd("C:/Users/Sebastian/OneDrive/School_Master/DataScience/Assignment") #Sebi
 
 set.seed (1)
 
@@ -75,7 +76,8 @@ loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
 # 21: mths_since_last_record 84.5%
 # 41: mths_since_last_major_derog 75.0%
 
-
+# Remove columes with more than 70% NA Values
+loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
 
 # convert dates to year -> YYYY
