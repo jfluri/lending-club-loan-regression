@@ -12,7 +12,8 @@
 
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
-setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
+setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas PC
+setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas Laptop
 setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
 
 set.seed (1)
@@ -53,6 +54,27 @@ loan[loan=="n/a"] <- NA
 loan.column <- as.data.frame(colnames(loan))
 loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1] #store the count of NA of all columns.
 loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
+
+#Remove the following columns which have >70% NAs
+# 44: dti_joint	99.9%
+# 43: annual_inc_joint 99.9%
+# 54: il_util	97.9%
+# 52: mths_since_rcnt_il 97.7%
+# 48: open_acc_6m	97.6%
+# 49: open_il_6m 97.6%
+# 50: open_il_12m	97.6%
+# 51: open_il_24m	97.6%
+# 53: total_bal_il 97.6%
+# 55: open_rv_12m	97.6%
+# 56: open_rv_24m	97.6%
+# 57: max_bal_bc 97.6%
+# 58: all_util 97.6%
+# 60: inq_fi 97.6%
+# 61: total_cu_tl 97.6%
+# 62: inq_last_12m 97.6%
+# 21: mths_since_last_record 84.5%
+# 41: mths_since_last_major_derog 75.0%
+
 
 
 
