@@ -46,8 +46,6 @@ loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 summary(loan)
 
 
-#TODO Remove attribute with >70% NA
-
 # in order to count NA, we first have to get rid of all blank or "n/a" (e.g. in emp_length) values.
 loan[loan==""] <- NA
 loan[loan=="n/a"] <- NA
@@ -80,6 +78,10 @@ loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
 loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
 
+#list occurrences of values in specific fields to spot anomalies, blank values, etc.
+as.data.frame(table(loan$grade)) 
+
+
 # convert dates to year -> YYYY
 loan$issue_d <- substr(loan$issue_d,5,8)
 loan$earliest_cr_line <- substr(loan$earliest_cr_line,5,8)
@@ -87,34 +89,35 @@ loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
 loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
-
+#as.data.frame(table(loan$grade)) #check grade
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
-#list occurrences of values in specific fields to spot anomalies, blank values, etc.
-as.data.frame(table(loan$next_pymnt_d)) 
+as.data.frame(table(loan$emp_length)) #check emp_length
+#TODO: type conversion to numeric!
+
+as.data.frame(table(loan$home_ownership)) #check home_ownership
+#TODO: should we get rid of "ANY" as it only occurs 2 times? What about NONE (45) and OTHER (155)? (downsampling)
+
+as.data.frame(table(loan$verification_status)) #check verification_status: this looks good: only 3 categories
+
+as.data.frame(table(loan$loan_status)) #check loan_status
+#TODO: downsampling, but how?
+
+as.data.frame(table(loan$purpose)) #check purpose.
+#TODO: downsampling possible?
+
+as.data.frame(table(loan$addr_state)) #check state: remove them from the data set because of too many levels (51).
+loan <- subset(loan, select = -c(addr_state))
+
 
 ## define how to clean the following datapoints:
 
-
 # convert string fields to number fields
 
-#TODO: emp_length
-#TODO: issue_d
-#TODO: addr_state ? --> Find a solution -> could doom the model - might have to be removed
 #TODO: earliest_cr_line
 #TODO: mths_since_last_deling - a lot of NAs
-#TODO: mths_since_last_record - a lot of NAs
-#TODO: last_pymnt_d
-#TODO: next_pymnt_d
-#TODO: last_credit_pull_d
-#TODO: mths_since_last_major_derog - a lot of NAs
-#TODO:annual_inc_joint - a lot of NAs
-#TODO: dti_joint - a lot of NAs
-#TODO: open_acc_6m - a lot of NAs
-#TODO: open_il_6m - a lot of NAs
-#TODO: open_il_12m - a lot of NAs
 
-#general question: are a lot of NAs in a column bad?
+
 
 
 ########## MISSING VALUE TREATMENT ##########
