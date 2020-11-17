@@ -105,8 +105,8 @@ loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 as.data.frame(table(loan$grade)) #check grade
 loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
 
-as.data.frame(table(loan$emp_length)) #check emp_length
-#TODO: type conversion to numeric!
+as.data.frame(table(loan$emp_length)) #check emp_length: convert it to numeric
+loan$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan$emp_length))
 
 as.data.frame(table(loan$home_ownership)) #check home_ownership
 #TODO: should we get rid of "ANY" as it only occurs 2 times? What about NONE (45) and OTHER (155)? (downsampling)
@@ -137,7 +137,8 @@ loan <- subset(loan, select = -c(addr_state))
 
 # TODO: List attributes that need missing value treatment and are important for the analysis
 
-
+# emp_length: assume that the borrower hasn't worked many years for his data to be recorded. Therefore fill missing values with 0
+loan$emp_length[is.na(loan$emp_length)] <- 0 #NA to 0
 
 ########## SPLITTING TEST/TRAINING DATA ##########
 
