@@ -14,6 +14,7 @@
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas
 setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
+setwd("C:/Users/Sebastian/OneDrive/School_Master/DataScience/Assignment") #Sebi
 
 set.seed (1)
 
@@ -54,7 +55,8 @@ loan.column <- as.data.frame(colnames(loan))
 loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1] #store the count of NA of all columns.
 loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
 
-
+# Remove columes with more than 70% NA Values
+loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
 # convert dates to year -> YYYY
 loan$issue_d <- substr(loan$issue_d,5,8)
