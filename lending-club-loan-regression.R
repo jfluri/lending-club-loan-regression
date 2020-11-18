@@ -16,6 +16,25 @@
 # Understand the data:
 # https://www.kaggle.com/pragyanbo/a-hitchhiker-s-guide-to-lending-club-loan-data
 
+#Check for missing libraries
+libraries_used<-
+  c("varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest")
+
+libraries_missing<-
+  libraries_used[!(libraries_used %in% installed.packages()[,"Package"])]
+
+if(length(libraries_missing)) install.packages(libraries_missing)
+
+library(plyr)
+library(tidyverse)
+library(caret)
+library(leaps)
+library(glmnet)
+library(corrplot)
+library(car)
+library(randomForest)
+library(varImp)
+
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas PC
@@ -32,6 +51,19 @@ head(allData)
 
 
 ########## FEATURE ENGINEERING ##########
+
+#Get numbers of unique values
+meta_loans <- funModeling::df_status(allData, print_results = FALSE)
+knitr::kable(meta_loans)
+
+meta_loans <-
+  meta_loans %>%
+  mutate(uniq_rat = unique / nrow(allData))
+#Get unique values in percentage
+meta_loans %>%
+  select(variable, unique, uniq_rat) %>%
+  mutate(unique = unique, uniq_rat = scales::percent(uniq_rat)) %>%
+  knitr::kable()
 
 #Remove the following:
 # 1: X
@@ -144,6 +176,14 @@ loan <- subset(loan, select = -c(addr_state))
 #TODO: mths_since_last_deling - a lot of NAs
 
 
+#get linear model for all variables
+mymodel <- lm(int_rate~.,data=loan)
+summary <- mymodel
+
+#regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
+#varImp(regressor) #get variable importance, based on mean decrease in accuracy
+#varImp(regressor, conitional = TRUE) #conditional = TRUE, adjusts for correlations between predictors
+#varImpAuc(regressor) #more robust towards class imbalance
 
 
 ########## MISSING VALUE TREATMENT ##########
@@ -163,6 +203,9 @@ for(i in 1:ncol(loan)){
 # emp_length: assume that the borrower hasn't worked many years for his data to be recorded. Therefore fill missing values with 0
 loan$emp_length[is.na(loan$emp_length)] <- 0 #NA to 0
 
+#Convert variable application type as factor variable
+loan$application_type <- factor(loan$application_type)
+
 ########## SPLITTING TEST/TRAINING DATA ##########
 
 train=sample(nrow(loan),nrow(loan)*0.8) # indices of a training data (80%)
@@ -175,7 +218,7 @@ loan.Test <- loan[-train,] # test data
 #TODO:check last semester approach: which attributes are most important for prediction?
 
 # Best Subset Selection
-library("leaps")
+
 
 #sets <- regsubsets(int_rate ~ ., loan, nvmax = 12, really.big=T)
 # => 1233 linear dependencies found. We could try with really.big=T but this will run for hours.
@@ -196,7 +239,6 @@ library("leaps")
 ########## REGRESSION ##########
 
 # Ridge & Lasso Regression
-library("glmnet")
 
 predictors <- model.matrix(int_rate ~ ., loan)[,-1] #TODO: we only get 10 rows, I guess because of all other rows containing NAs(?)
 head(predictors)
