@@ -89,6 +89,15 @@ loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
 loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
+
+#Replace NA Values with mean at columns that have less than 70% NA
+# To do with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, others??? 
+
+for(i in 1:ncol(loan)){
+  loan[is.na(loan[,i]), i] <- mean(loan[,i], na.rm = TRUE)
+}
+
+
 ####
 # Documentation
 # summary(loan$last_pymnt_d) --> Based on this output we changed the values to ordinal
