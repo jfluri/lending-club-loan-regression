@@ -5,6 +5,12 @@
 ###############################################################
 
 
+########## COACHING QUESTIONS ##########
+
+
+
+
+
 ########## PRELIMINARIES ##########
 
 # Understand the data:
@@ -90,12 +96,7 @@ loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
 
-#Replace NA Values with mean at columns that have less than 70% NA
-# To do with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, others??? 
 
-for(i in 1:ncol(loan)){
-  loan[is.na(loan[,i]), i] <- mean(loan[,i], na.rm = TRUE)
-}
 
 
 ####
@@ -106,7 +107,7 @@ for(i in 1:ncol(loan)){
 # Make year values ordinal (string to ordinal)
 loan$issue_d <- factor(loan$issue_d, order = TRUE)
 loan$earliest_cr_line <- factor(loan$earliest_cr_line, order = TRUE)
-loan$last_pymnt <- factor(loan$last_pymnt, order = TRUE)
+loan$last_pymnt_d <- factor(loan$last_pymnt_d, order = TRUE)
 loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
 loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 
@@ -119,16 +120,19 @@ loan$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan$emp_length))
 
 as.data.frame(table(loan$home_ownership)) #check home_ownership
 #TODO: should we get rid of "ANY" as it only occurs 2 times? What about NONE (45) and OTHER (155)? (downsampling)
+#todo: plot against int_rate and decide whether significant or not. if not: delete the rows, ignore the OTHER category.
 
 as.data.frame(table(loan$verification_status)) #check verification_status: this looks good: only 3 categories
 
 as.data.frame(table(loan$loan_status)) #check loan_status
-#TODO: downsampling, but how?
+#TODO: downsampling, but how? check:
+#https://triamus.github.io/project/lending-club-loan-data-in-r/#grade
+# punkt 6. careful, we have correlations to other columns.
 
-as.data.frame(table(loan$purpose)) #check purpose.
-#TODO: downsampling possible?
+as.data.frame(table(loan$purpose)) #check purpose. leave it as it is
 
-as.data.frame(table(loan$addr_state)) #check state: remove them from the data set because of too many levels (51).
+as.data.frame(table(loan$addr_state)) #check state: remove them from the data set because of too many levels (51). check dependency to int_rate
+#TODO: question for coaching.
 loan <- subset(loan, select = -c(addr_state))
 
 
@@ -146,6 +150,16 @@ loan <- subset(loan, select = -c(addr_state))
 
 # TODO: List attributes that need missing value treatment and are important for the analysis
 
+#Replace NA Values with mean at columns that have less than 70% NA
+# TODO: with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, others??? 
+
+for(i in 1:ncol(loan)){
+  loan[is.na(loan[,i]), i] <- mean(loan[,i], na.rm = TRUE)
+}
+
+#TODO: question for coaching: what to do with mths_since_last_delinq?
+
+
 # emp_length: assume that the borrower hasn't worked many years for his data to be recorded. Therefore fill missing values with 0
 loan$emp_length[is.na(loan$emp_length)] <- 0 #NA to 0
 
@@ -158,6 +172,7 @@ loan.Test <- loan[-train,] # test data
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
 
+#TODO:check last semester approach: which attributes are most important for prediction?
 
 # Best Subset Selection
 library("leaps")
