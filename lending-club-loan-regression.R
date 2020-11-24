@@ -115,6 +115,14 @@ loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
 # Remove columes with more than 70% NA Values
 loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
+# Remove rows with more than 70% NA Values
+# 44 Rows leads to 31 NA Values to reach the 70% threshold
+loan$na_count <- apply(loan, 1, function(x) sum(is.na(x)))
+
+# Highest Values --> 14 NA Values, therefore no general Action required -->na_count row removed
+loan <- loan[,-c(45)]
+
+
 
 #list occurrences of values in specific fields to spot anomalies, blank values, etc.
 #as.data.frame(table(loan$grade)) 
