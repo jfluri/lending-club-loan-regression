@@ -199,7 +199,7 @@ summary <- mymodel
 # TODO: List attributes that need missing value treatment and are important for the analysis
 
 #Replace NA Values with mean at columns that have less than 70% NA
-# TODO: with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, others??? 
+# TODO: with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, revol_bal others??? 
 
 for(i in 1:ncol(loan)){
   loan[is.na(loan[,i]), i] <- mean(loan[,i], na.rm = TRUE)
