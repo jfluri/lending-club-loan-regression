@@ -18,7 +18,7 @@
 
 #Check for missing libraries
 libraries_used<-
-  c("varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest")
+  c("varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench")
 
 libraries_missing<-
   libraries_used[!(libraries_used %in% installed.packages()[,"Package"])]
@@ -34,6 +34,7 @@ library(corrplot)
 library(car)
 library(randomForest)
 library(varImp)
+library(mlbench)
 
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
@@ -184,9 +185,7 @@ loan <- subset(loan, select = -c(addr_state))
 #TODO: mths_since_last_deling - a lot of NAs
 
 
-#get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan)
-summary <- mymodel
+
 
 #regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
 #varImp(regressor) #get variable importance, based on mean decrease in accuracy
@@ -213,6 +212,43 @@ loan$emp_length[is.na(loan$emp_length)] <- 0 #NA to 0
 
 #Convert variable application type as factor variable
 loan$application_type <- factor(loan$application_type)
+
+
+##########Feature selection##########
+
+#get linear model for all variables
+mymodel <- lm(int_rate~.,data=loan)
+summary(mymodel)
+
+#function to get all numerical variables
+num_vars <- 
+  loan %>%
+  sapply(is.numeric) %>%
+  which() %>%
+  names()
+
+meta_train <- funModeling::df_status(loan, print_results = FALSE)
+
+meta_train %>%
+  select(variable, p_zeros, p_na, unique) %>%
+  filter_(~ variable %in% num_vars ) %>%
+  knitr::kable() 
+
+#Show numerical variables with correlation as pie chart
+corrplot::corrplot(cor(loan[, num_vars], use = "complete.obs"),
+                   method = "pie", type = "upper")
+
+#cor(loan[, num_vars])
+
+#find variables with high correlation
+caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
+                       names = TRUE, cutoff = .5)
+
+vars_to_remove <-
+  c("loan_amnt", "funded_amnt", "funded_amnt_inv", "installment", "total_pymnt", "total_pymnt_inv", "out_prncp",
+    "total_rec_prncp", "revol_bal", "total_acc", "recoveries", "delinq_2yrs")
+
+loan <- loan %>% select(-one_of(vars_to_remove))
 
 ########## SPLITTING TEST/TRAINING DATA ##########
 
