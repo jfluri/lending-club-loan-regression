@@ -18,7 +18,7 @@
 
 #Check for missing libraries
 libraries_used<-
-  c("varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench")
+  c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench")
 
 libraries_missing<-
   libraries_used[!(libraries_used %in% installed.packages()[,"Package"])]
@@ -35,6 +35,7 @@ library(car)
 library(randomForest)
 library(varImp)
 library(mlbench)
+library(MASS)
 
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
@@ -219,6 +220,11 @@ loan$application_type <- factor(loan$application_type)
 #get linear model for all variables
 mymodel <- lm(int_rate~.,data=loan)
 summary(mymodel)
+vif(mymodel)
+
+fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+step <- stepAIC(fit, direction = "both")
+step$anova
 
 #function to get all numerical variables
 num_vars <- 
@@ -237,12 +243,14 @@ meta_train %>%
 #Show numerical variables with correlation as pie chart
 corrplot::corrplot(cor(loan[, num_vars], use = "complete.obs"),
                    method = "pie", type = "upper")
+loan.cor <- cor(loan[, num_vars])
+
 
 #cor(loan[, num_vars])
 
 #find variables with high correlation
 caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
-                       names = TRUE, cutoff = .5)
+                       names = TRUE, cutoff = .6)
 
 vars_to_remove <-
   c("loan_amnt", "funded_amnt", "funded_amnt_inv", "installment", "total_pymnt", "total_pymnt_inv", "out_prncp",
