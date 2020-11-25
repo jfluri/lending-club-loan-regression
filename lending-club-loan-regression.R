@@ -217,15 +217,6 @@ loan$application_type <- factor(loan$application_type)
 
 ##########Feature selection##########
 
-#get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan)
-summary(mymodel)
-vif(mymodel)
-
-fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-step <- stepAIC(fit, direction = "both")
-step$anova
-
 #function to get all numerical variables
 num_vars <- 
   loan %>%
@@ -252,11 +243,18 @@ loan.cor <- cor(loan[, num_vars])
 caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6)
 
-vars_to_remove <-
-  c("loan_amnt", "funded_amnt", "funded_amnt_inv", "installment", "total_pymnt", "total_pymnt_inv", "out_prncp",
-    "total_rec_prncp", "revol_bal", "total_acc", "recoveries", "delinq_2yrs")
+loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
+                       total_rec_prncp, revol_bal, total_acc, recoveries))
 
-loan <- loan %>% select(-one_of(vars_to_remove))
+#get linear model for all variables
+mymodel <- lm(int_rate~.,data=loan)
+summary(mymodel)
+vif(mymodel)
+
+fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+step <- stepAIC(fit, direction = "both")
+step$anova
+
 
 ########## SPLITTING TEST/TRAINING DATA ##########
 
