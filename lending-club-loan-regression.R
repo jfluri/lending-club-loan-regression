@@ -162,20 +162,21 @@ loan$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan$emp_length))
 
 as.data.frame(table(loan$home_ownership)) #check home_ownership
 #TODO: should we get rid of "ANY" as it only occurs 2 times? What about NONE (45) and OTHER (155)? (downsampling)
-#todo: plot against int_rate and decide whether significant or not. if not: delete the rows, ignore the OTHER category.
+#todo: plot against int_rate and decide whether significant or not. if not: delete the rows, ignore the OTHER category. <- according to Holger we
+#should let the model decide
 
 as.data.frame(table(loan$verification_status)) #check verification_status: this looks good: only 3 categories
 
 as.data.frame(table(loan$loan_status)) #check loan_status
-#TODO: downsampling, but how? check:
-#https://triamus.github.io/project/lending-club-loan-data-in-r/#grade
+#TODO: maybe downsampling according:
+#https://triamus.github.io/project/lending-club-loan-data-in-r/#defining-default
 # punkt 6. careful, we have correlations to other columns.
 
 as.data.frame(table(loan$purpose)) #check purpose. leave it as it is
 
 as.data.frame(table(loan$addr_state)) #check state: remove them from the data set because of too many levels (51). check dependency to int_rate
-#TODO: question for coaching.
-loan <- subset(loan, select = -c(addr_state))
+#TODO: question for coaching. answer: let the model decide.. if we would run into computation limits: try without addr_state
+#loan <- subset(loan, select = -c(addr_state))
 
 
 ## define how to clean the following datapoints:
@@ -246,14 +247,6 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
                        total_rec_prncp, revol_bal, total_acc, recoveries))
 
-#get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan)
-summary(mymodel)
-vif(mymodel)
-
-fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-step <- stepAIC(fit, direction = "both")
-step$anova
 
 
 ########## SPLITTING TEST/TRAINING DATA ##########
@@ -261,6 +254,25 @@ step$anova
 train=sample(nrow(loan),nrow(loan)*0.8) # indices of a training data (80%)
 loan.Train <- loan[train,] # training data 
 loan.Test <- loan[-train,] # test data
+
+
+
+########## LINEAR MODELS ##########
+
+#get linear model for all variables
+mymodel <- lm(int_rate~.,data=loan.Train)
+summary(mymodel)
+vif(mymodel)
+plot(mymodel)
+#Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
+# Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
+# would be expected if they truly came from a Normal distribution.
+
+
+
+fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+step <- stepAIC(fit, direction = "both")
+step$anova
 
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
