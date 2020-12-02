@@ -18,7 +18,7 @@
 
 #Check for missing libraries
 libraries_used<-
-  c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench")
+  c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench","tidyr")
 
 libraries_missing<-
   libraries_used[!(libraries_used %in% installed.packages()[,"Package"])]
@@ -36,6 +36,7 @@ library(randomForest)
 library(varImp)
 library(mlbench)
 library(MASS)
+library(tidyr)
 
 # Set the working directory to the folder with the data
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
@@ -124,7 +125,8 @@ loan$na_count <- apply(loan, 1, function(x) sum(is.na(x)))
 # Highest Values --> 14 NA Values, therefore no general Action required -->na_count row removed
 loan <- loan[,-c(45)]
 
-
+# Drop rows that have only a few NA's in a specific column
+loan <- loan %>% drop_na(delinq_2yrs)
 
 #list occurrences of values in specific fields to spot anomalies, blank values, etc.
 #as.data.frame(table(loan$grade)) 
