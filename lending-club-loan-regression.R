@@ -258,43 +258,6 @@ loan.Train <- loan[train,] # training data
 loan.Test <- loan[-train,] # test data
 
 
-###RF Test
-int_rate_vars <- c("int_rate")
-
-loan %>%
-  select_(.dots = int_rate_vars) %>%
-  gather_("variable", "value", gather_cols = int_rate_vars) %>%
-  ggplot(aes(x = value)) +
-  facet_wrap(~ variable, scales = "free_x", ncol = 3) +
-  geom_histogram()
-
-# function for number of observations 
-give_count <- function(x){  return(c(y = median(x)*1.05, label = length(x)))}
-# function for mean labels
-give_mean <- function(x){
-  return(c(y = median(x)*0.97, label = round(mean(x),2))) }
-
-
-# plot
-loan %>%
-  # plot
-  ggplot(aes(grade, int_rate), mpg, label=rownames(loan)) +
-  geom_boxplot(fill = "white", colour = "darkblue", 
-               outlier.colour = "red", outlier.shape = 1) +
-  stat_summary(fun.data = give_count, geom = "text", fun.y = median) +
-  stat_summary(fun.data = give_mean, geom = "text", fun.y = mean, colour = "red") +
-  labs(title="Interest Rate by Grade", x = "Grade", y = "Interest Rate \n") +
-  facet_wrap(~ term)
-
-loan %>%
-  ggplot(aes(home_ownership, int_rate), mpg, label=rownames(loan)) +
-  geom_boxplot(fill = "white", colour = "darkblue", 
-               outlier.colour = "red", outlier.shape = 1) +
-  stat_summary(fun.data = give_count, geom = "text", fun.y = median) +
-  stat_summary(fun.data = give_mean, geom = "text", fun.y = mean, colour = "red") +
-  labs(title="Interest Rate by Home Ownership", x = "Home Ownership", y = "Interest Rate \n") 
-  
- ### RF Test
 ########## LINEAR MODELS ##########
 
 #get linear model for all variables
