@@ -42,6 +42,7 @@ library(mlbench)
 library(MASS)
 library(tidyr)
 library(stringi)
+library(dplyr)
 
 
 ######################################################################################
@@ -77,11 +78,11 @@ knitr::kable(meta_loans)
 meta_loans <-
   meta_loans %>%
   mutate(uniq_rat = unique / nrow(allData))
-
+meta_loans
 # Get unique values in percentage  
 # TODO: Doesn't work!
 meta_loans %>%
-  select(variable, unique, uniq_rat) %>%
+  dplyr::select(variable, unique, uniq_rat) %>%
   mutate(unique = unique, uniq_rat = scales::percent(uniq_rat)) %>%
   knitr::kable()
 
