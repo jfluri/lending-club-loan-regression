@@ -1,22 +1,26 @@
-###############################################################
+#####################################################################################
 # Data Science
 # Providing a regression model for the interest rate - int_rate
 # Jasmin Fluri, Roman Fischer, Sebastian Geiger, Thomas Probst
-###############################################################
+#####################################################################################
 
 
 ########## COACHING QUESTIONS ##########
+# How can results or modelling attempts be saved to be able to compare them later on and 
+# have an overview of the different attempts that have been made. #292
 
 
-
-
-
-########## PRELIMINARIES ##########
+######################################################################################
+# DATA INFORMATION 
+######################################################################################
 
 # Understand the data:
 # https://www.kaggle.com/pragyanbo/a-hitchhiker-s-guide-to-lending-club-loan-data
 
-#Check for missing libraries
+######################################################################################
+# Before starting with the data preparation, check for missing libraries
+######################################################################################
+
 libraries_used<-
   c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench","tidyr")
 
@@ -37,38 +41,51 @@ library(varImp)
 library(mlbench)
 library(MASS)
 library(tidyr)
+library(stringi)
 
-# Set the working directory to the folder with the data
+
+######################################################################################
+# Set the working directory to the folder with the data and load data
+######################################################################################
+
 setwd("C:/Users/jasmi/Dropbox/MSc-FHNW/Modules/_DataScience/Assignment") #Jasmin
 setwd("C:/Users/Thoems/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas PC
 setwd("E:/OneDrive/Studium/Master/Data Science/R scripts/Assignment for regression") #Thomas Laptop
 setwd("C:/Users/roman/Desktop/FHNW/Data Science/Assignment") #Roman
 setwd("C:/Users/Sebastian/OneDrive/School_Master/DataScience/Assignment") #Sebi
 
+# To make the regression reproducible, the seed is set to 1
 set.seed (1)
 
-# Load csv file into data object
+# Load the csv file of the regression train data into the data object allData
 allData<- read.csv("regression_train_loan.csv",header= TRUE,sep = ",",quote="\"",dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
 
+# Print the head of the data object allData
 head(allData)
 
+######################################################################################
+# FEATURE ENGINEERING / DATA ANALYSIS 
+######################################################################################
 
-########## FEATURE ENGINEERING ##########
-
-#Get numbers of unique values
+# Calculate the number of unique values per variable in our dataset
 meta_loans <- funModeling::df_status(allData, print_results = FALSE)
+
+# Print the number of unique values per variable
 knitr::kable(meta_loans)
 
+# Calculates how many different values are in an attribute
 meta_loans <-
   meta_loans %>%
   mutate(uniq_rat = unique / nrow(allData))
-#Get unique values in percentage
+
+# Get unique values in percentage  
+# TODO: Doesn't work!
 meta_loans %>%
   select(variable, unique, uniq_rat) %>%
   mutate(unique = unique, uniq_rat = scales::percent(uniq_rat)) %>%
   knitr::kable()
 
-#Remove the following:
+#Remove the following values from the dataset:
 # 1: X
 # 2: id
 # 3: member_id
@@ -84,16 +101,27 @@ meta_loans %>%
 # 57: verification_status_joint
 loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 
+# Print the summary of the new smaller dataset
 summary(loan)
 
+######################################################################################
+# DATA CLEANING
+######################################################################################
 
-# in order to count NA, we first have to get rid of all blank or "n/a" (e.g. in emp_length) values.
+# In order to count NA, we first have to get rid of all blank or "n/a" (e.g. in emp_length) values.
 loan[loan==""] <- NA
 loan[loan=="n/a"] <- NA
 
+# Data frame is created of our dataset
 loan.column <- as.data.frame(colnames(loan))
-loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1] #store the count of NA of all columns.
-loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
+
+# The count of NA of all columns is stored in the data frame
+loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1] 
+
+# NAs are stored in %
+loan.column$NA_percent <- loan.column$NAs / nrow(loan) 
+
+#TODO : Print overview
 
 #Remove the following columns which have >70% NAs
 # 44: dti_joint	99.9%
@@ -118,107 +146,139 @@ loan.column$NA_percent <- loan.column$NAs / nrow(loan) #NA in %
 # Remove columes with more than 70% NA Values
 loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
-# Remove rows with more than 70% NA Values
+# Remove rows with more than 70% NA Values --> There are none in our dataset
+
 # 44 Rows leads to 31 NA Values to reach the 70% threshold
 loan$na_count <- apply(loan, 1, function(x) sum(is.na(x)))
 
-# Highest Values --> 14 NA Values, therefore no general Action required -->na_count row removed
+# TODO: Show overview
+
+# Highest Values --> 14 NA Values, therefore no general Action required --> na_count column is removed
 loan <- loan[,-c(45)]
 
-# Drop rows that have only a few NA's in a specific column
-loan <- loan %>% drop_na(delinq_2yrs)
+# Drop rows that have only a few NA's in a specific column --> We are not doing this as long as we don't have problems
+# loan <- loan %>% drop_na(delinq_2yrs)
 
 #list occurrences of values in specific fields to spot anomalies, blank values, etc.
 #as.data.frame(table(loan$grade)) 
 
 
-# convert dates to year -> YYYY
+######################################################################################
+# MODIFICATION OF DATE COLUMNS
+######################################################################################
+# Dates have to be converted into categorical attributes for the regression
+
+# convert dates to year without days and month -> YYYY
 loan$issue_d <- substr(loan$issue_d,5,8)
 loan$earliest_cr_line <- substr(loan$earliest_cr_line,5,8)
 loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
 loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
+# Print summary of last_pymnt_d
+summary(loan$last_pymnt_d)
 
-
-
-
-####
-# Documentation
 # summary(loan$last_pymnt_d) --> Based on this output we changed the values to ordinal
-####
 
-# Make year values ordinal (string to ordinal)
+# Make year values ordinal (string to ordinal) of the date fields
+# The order = TRUE puts the years in the correct order
 loan$issue_d <- factor(loan$issue_d, order = TRUE)
 loan$earliest_cr_line <- factor(loan$earliest_cr_line, order = TRUE)
 loan$last_pymnt_d <- factor(loan$last_pymnt_d, order = TRUE)
 loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
 loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 
+# check the distribution of the grade variable
+as.data.frame(table(loan$grade)) 
 
-as.data.frame(table(loan$grade)) #check grade
-loan$grade <- factor(loan$grade, order = TRUE) #make loan$grade ordinal
+# Convert loan$grade to ordinal and put it into the correct order
+loan$grade <- factor(loan$grade, order = TRUE) 
 
-as.data.frame(table(loan$emp_length)) #check emp_length: convert it to numeric
+# check emp_length - the categories are strings and have to be converted to numeric
+as.data.frame(table(loan$emp_length)) 
+
+# Convert emp_length to numeric values - Only the numbers are extracted
 loan$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan$emp_length))
 
-as.data.frame(table(loan$home_ownership)) #check home_ownership
-#TODO: should we get rid of "ANY" as it only occurs 2 times? What about NONE (45) and OTHER (155)? (downsampling)
-#todo: plot against int_rate and decide whether significant or not. if not: delete the rows, ignore the OTHER category. <- according to Holger we
-#should let the model decide
+# check the distribution of home_ownership
+as.data.frame(table(loan$home_ownership)) 
+# "ANY"  only occurs 2 times - ut as long as we don't have problems we let the model decide if it is of any interest
+# same thing with  NONE (45) and OTHER (155) (there is no downsampling planned at the moment)
 
-as.data.frame(table(loan$verification_status)) #check verification_status: this looks good: only 3 categories
+# check the distribution of verification_status: this looks good: only 3 categories
+as.data.frame(table(loan$verification_status)) 
 
-as.data.frame(table(loan$loan_status)) #check loan_status
-#TODO: maybe downsampling according:
-#https://triamus.github.io/project/lending-club-loan-data-in-r/#defining-default
+#check the distribution of loan_status
+as.data.frame(table(loan$loan_status)) 
+# TODO: maybe later downsampling according to:
+# https://triamus.github.io/project/lending-club-loan-data-in-r/#defining-default
 # punkt 6. careful, we have correlations to other columns.
 
-as.data.frame(table(loan$purpose)) #check purpose. leave it as it is
+#check the distribution of purpose. We will leave it as it is
+as.data.frame(table(loan$purpose)) 
 
-as.data.frame(table(loan$addr_state)) #check state: remove them from the data set because of too many levels (51). check dependency to int_rate
-#TODO: question for coaching. answer: let the model decide.. if we would run into computation limits: try without addr_state
+#check the distribution of addr_state
+as.data.frame(table(loan$addr_state))  
+# We let the model decide if it is of any use. If we run into computation limits:  we'll try without addr_state
+# maybe needed later: remove addr_state from dataset
 #loan <- subset(loan, select = -c(addr_state))
-
-
-## define how to clean the following datapoints:
-
-# convert string fields to number fields
-
-#TODO: earliest_cr_line
-#TODO: mths_since_last_deling - a lot of NAs
-
-
-
-
-#regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
-#varImp(regressor) #get variable importance, based on mean decrease in accuracy
-#varImp(regressor, conitional = TRUE) #conditional = TRUE, adjusts for correlations between predictors
-#varImpAuc(regressor) #more robust towards class imbalance
-
-
-########## MISSING VALUE TREATMENT ##########
-
-# TODO: List attributes that need missing value treatment and are important for the analysis
-
-#Replace NA Values with mean at columns that have less than 70% NA
-# TODO: with: tot_cur_bal, total_rev_hi_lim, tot_cur_bal, revol_bal others??? 
-
-for(i in 1:ncol(loan)){
-  loan[is.na(loan[,i]), i] <- mean(loan[,i], na.rm = TRUE)
-}
-
-#TODO: question for coaching: what to do with mths_since_last_delinq?
-
-
-# emp_length: assume that the borrower hasn't worked many years for his data to be recorded. Therefore fill missing values with 0
-loan$emp_length[is.na(loan$emp_length)] <- 0 #NA to 0
 
 #Convert variable application type as factor variable
 loan$application_type <- factor(loan$application_type)
 
 
-##########Feature selection##########
+######################################################################################
+# MISSING VALUE TREATMENT
+######################################################################################
+
+# For the emp_length value: we assume that missing values are values smaller than 1 year
+# Therefore we fill missing values with 0 and set NA to 0 
+loan$emp_length[is.na(loan$emp_length)] <- 0 
+
+# Replace NA Values with mean (for numerical values) or with the mode (for categorical values) 
+# in columns that have less than 70% NA
+
+# for numerical values the mean is set instead of the missing value for the following columns
+# tot_cur_bal - 43
+loan[is.na(loan[,43]), 43] <- mean(loan[,43], na.rm = TRUE) 
+
+# total_rev_hi_lim - 44
+loan[is.na(loan[,44]), 44] <- mean(loan[,44], na.rm = TRUE) 
+
+# tot_coll_amt - 42
+loan[is.na(loan[,42]), 42] <- mean(loan[,42], na.rm = TRUE) 
+
+# mths_since_last_deling - 20
+loan[is.na(loan[,20]), 20] <- mean(loan[,20], na.rm = TRUE) 
+
+# revol_bal - 23
+loan[is.na(loan[,23]), 23] <- mean(loan[,23], na.rm = TRUE) 
+
+# revol_util - 24
+loan[is.na(loan[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
+
+
+# for categorical values the mode is set instead of the missing value for the following columns
+
+# set the mode function
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# next_pymnt_d - 37
+loan[is.na(loan[,37]), 37] <- Mode(loan[,37]) 
+
+
+######################################################################################
+# Feature selection
+######################################################################################
+
+#TODO does this work? - would be nice if it would tell us which attributes are important
+#regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
+#varImp(regressor) #get variable importance, based on mean decrease in accuracy
+#varImp(regressor, conitional = TRUE) #conditional = TRUE, adjusts for correlations between predictors
+#varImpAuc(regressor) #more robust towards class imbalance
 
 #function to get all numerical variables
 num_vars <- 
@@ -237,17 +297,15 @@ meta_train %>%
 #Show numerical variables with correlation as pie chart
 corrplot::corrplot(cor(loan[, num_vars], use = "complete.obs"),
                    method = "pie", type = "upper")
-loan.cor <- cor(loan[, num_vars])
+loan.cor <- cor(loan[, num_vars]) #plot is printed as a table
 
-
-#cor(loan[, num_vars])
 
 #find variables with high correlation
 caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
-                       names = TRUE, cutoff = .6)
+                       names = TRUE, cutoff = .6) #prints correlation
 
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
-                       total_rec_prncp, revol_bal, total_acc, recoveries))
+                       total_rec_prncp, revol_bal, total_acc, recoveries)) #removes values that have a correlation
 
 
 
@@ -294,34 +352,17 @@ loan %>%
   stat_summary(fun.data = give_mean, geom = "text", fun.y = mean, colour = "red") +
   labs(title="Interest Rate by Home Ownership", x = "Home Ownership", y = "Interest Rate \n") 
   
- ### RF Test
-########## LINEAR MODELS ##########
-
-#get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan.Train)
-summary(mymodel)
-vif(mymodel)
-plot(mymodel)
-#Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
-# Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
-# would be expected if they truly came from a Normal distribution.
-
-
-
-fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-step <- stepAIC(fit, direction = "both")
-step$anova
-
+## Roman
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
 
-#TODO:check last semester approach: which attributes are most important for prediction?
+# TODO:check last semester approach: which attributes are most important for prediction?
 
 # Best Subset Selection
 
-
+# We are telling R that we have a really big dataset 
 #sets <- regsubsets(int_rate ~ ., loan, nvmax = 12, really.big=T)
-# => 1233 linear dependencies found. We could try with really.big=T but this will run for hours.
+# TODO : Test again if it works after removing stuff
 
 
 # Forward Stepwise Selection
@@ -336,7 +377,28 @@ step$anova
 # Hybrid Stepwise Methods(?)
 
 
-########## REGRESSION ##########
+# do a feature selection of (5-10) attributes to get a meaningful result 
+# TODO : Experiment
+# TODO : make data frame (some sort of storage) to save the results of the different feature sets. 
+
+
+########## LINEAR REGRESSION MODELS / ANALYSIS ##########
+
+#get linear model for all variables
+mymodel <- lm(int_rate~.,data=loan.Train)
+summary(mymodel)
+vif(mymodel)
+plot(mymodel)
+# Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
+# Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
+# would be expected if they truly came from a Normal distribution.
+
+
+
+fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+step <- stepAIC(fit, direction = "both")
+step$anova
+
 
 # Ridge & Lasso Regression
 
@@ -347,4 +409,3 @@ outputs <- loan$int_rate
 m_ridge <- glmnet(predictors, outputs, alpha = 0) # calling ridge regression by using alpha=0.
 #TODO: this causes an error because the numbers don't match. Problem because of NAs?
 
-########## ANALYSIS ##########
