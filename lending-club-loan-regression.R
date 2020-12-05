@@ -316,43 +316,6 @@ loan.Train <- loan[train,] # training data
 loan.Test <- loan[-train,] # test data
 
 
-###RF Test
-int_rate_vars <- c("int_rate")
-
-loan %>%
-  select_(.dots = int_rate_vars) %>%
-  gather_("variable", "value", gather_cols = int_rate_vars) %>%
-  ggplot(aes(x = value)) +
-  facet_wrap(~ variable, scales = "free_x", ncol = 3) +
-  geom_histogram()
-
-# function for number of observations 
-give_count <- function(x){  return(c(y = median(x)*1.05, label = length(x)))}
-# function for mean labels
-give_mean <- function(x){
-  return(c(y = median(x)*0.97, label = round(mean(x),2))) }
-
-
-# plot
-loan %>%
-  # plot
-  ggplot(aes(grade, int_rate), mpg, label=rownames(loan)) +
-  geom_boxplot(fill = "white", colour = "darkblue", 
-               outlier.colour = "red", outlier.shape = 1) +
-  stat_summary(fun.data = give_count, geom = "text", fun.y = median) +
-  stat_summary(fun.data = give_mean, geom = "text", fun.y = mean, colour = "red") +
-  labs(title="Interest Rate by Grade", x = "Grade", y = "Interest Rate \n") +
-  facet_wrap(~ term)
-
-loan %>%
-  ggplot(aes(home_ownership, int_rate), mpg, label=rownames(loan)) +
-  geom_boxplot(fill = "white", colour = "darkblue", 
-               outlier.colour = "red", outlier.shape = 1) +
-  stat_summary(fun.data = give_count, geom = "text", fun.y = median) +
-  stat_summary(fun.data = give_mean, geom = "text", fun.y = mean, colour = "red") +
-  labs(title="Interest Rate by Home Ownership", x = "Home Ownership", y = "Interest Rate \n") 
-  
-## Roman
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
 
@@ -386,18 +349,25 @@ loan %>%
 
 #get linear model for all variables
 mymodel <- lm(int_rate~.,data=loan.Train)
-summary(mymodel)
-vif(mymodel)
-plot(mymodel)
+ourmodels <- list(mymodel)
+summary(ourmodels[[1]])
+vif(ourmodels[[1]])
+plot(ourmodels[[1]])
 # Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
 # Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
 # would be expected if they truly came from a Normal distribution.
 
+mymodel <- lm(int_rate~grade,data=loan.Train)
+append(ourmodels,mymodel, after = length(ourmodels))
+ourmodels[[2]] <- mymodel
+summary(ourmodels[[2]])
+plot(ourmodels[[2]])
 
 
-fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-step <- stepAIC(fit, direction = "both")
-step$anova
+#This stepAIC approach runs quite long and does not provide a good model
+#fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+#step <- stepAIC(fit, direction = "both")
+#step$anova
 
 
 # Ridge & Lasso Regression
