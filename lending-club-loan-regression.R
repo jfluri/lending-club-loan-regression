@@ -262,18 +262,26 @@ loan.Test <- loan[-train,] # test data
 
 #get linear model for all variables
 mymodel <- lm(int_rate~.,data=loan.Train)
-summary(mymodel)
-vif(mymodel)
-plot(mymodel)
+ourmodels <- list(mymodel)
+summary(ourmodels[[1]])
+vif(ourmodels[[1]])
+plot(ourmodels[[1]])
 #Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
 # Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
 # would be expected if they truly came from a Normal distribution.
 
+mymodel <- lm(int_rate~grade,data=loan.Train)
+append(ourmodels,mymodel, after = length(ourmodels))
+ourmodels[[2]] <- mymodel
+summary(ourmodels[[2]])
+plot(ourmodels[[2]])
 
 
-fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-step <- stepAIC(fit, direction = "both")
-step$anova
+
+#This stepAIC approach runs quite long and does not provide a good model
+#fit <- lm(int_rate~., data=loan[complete.cases(loan),])
+#step <- stepAIC(fit, direction = "both")
+#step$anova
 
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
