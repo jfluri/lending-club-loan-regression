@@ -314,7 +314,7 @@ loan[is.na(loan[,41]), 41] <- Mode(loan[,41])
 
 
 # fit the random forest with default parameter
-regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE,na.action=na.roughfix) 
+regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE) #,na.action=na.roughfix 
 
 # get variable importance, based on mean decrease in accuracy
 caret::varImp(regressor) 
