@@ -259,8 +259,27 @@ loan[is.na(loan[,23]), 23] <- mean(loan[,23], na.rm = TRUE)
 # revol_util - 24
 loan[is.na(loan[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
 
+# total_acc - 25
+loan[is.na(loan[,25]), 25] <- mean(loan[,25], na.rm = TRUE) 
+
+# annual_inc - 10
+loan[is.na(loan[,10]), 10] <- mean(loan[,10], na.rm = TRUE) 
+
+# delinq_2yrs - 17
+loan[is.na(loan[,17]), 17] <- mean(loan[,17], na.rm = TRUE) 
+
+# inq_last_6mths - 19
+loan[is.na(loan[,19]), 19] <- mean(loan[,19], na.rm = TRUE) 
+
+# open_acc - 21
+loan[is.na(loan[,21]), 21] <- mean(loan[,21], na.rm = TRUE) 
+
+# pub_rec - 22
+loan[is.na(loan[,22]), 22] <- mean(loan[,22], na.rm = TRUE) 
+
 
 # for categorical values the mode is set instead of the missing value for the following columns
+
 
 # set the mode function
 Mode <- function(x) {
@@ -268,8 +287,24 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
+# earliest_cr_line - 18
+loan[is.na(loan[,18]), 18] <- Mode(loan[,18]) 
+
 # next_pymnt_d - 37
 loan[is.na(loan[,37]), 37] <- Mode(loan[,37]) 
+
+# last_pymnt_d - 35
+loan[is.na(loan[,35]), 35] <- Mode(loan[,35]) 
+
+# last_credit_pull_d - 38
+loan[is.na(loan[,38]), 38] <- Mode(loan[,38]) 
+
+# collections_12_mths_ex_med - 39
+loan[is.na(loan[,39]), 39] <- Mode(loan[,39]) 
+
+# acc_now_delinq - 41
+loan[is.na(loan[,41]), 41] <- Mode(loan[,41]) 
+
 
 ######################################################################################
 # ATTRIBUTE IMPORTANCE
