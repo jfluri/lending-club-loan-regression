@@ -45,6 +45,7 @@ library(stringi)
 library(dplyr)
 
 
+
 ######################################################################################
 # Set the working directory to the folder with the data and load data
 ######################################################################################
@@ -270,16 +271,25 @@ Mode <- function(x) {
 # next_pymnt_d - 37
 loan[is.na(loan[,37]), 37] <- Mode(loan[,37]) 
 
-
 ######################################################################################
-# Feature selection
+# ATTRIBUTE IMPORTANCE
 ######################################################################################
+# Overview of possibilities: https://www.linkedin.com/pulse/how-find-most-important-variables-r-amit-jain/
+# Getting the attribute importance of variables in our dataset
 
-#TODO does this work? - would be nice if it would tell us which attributes are important
-#regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
-#varImp(regressor) #get variable importance, based on mean decrease in accuracy
-#varImp(regressor, conitional = TRUE) #conditional = TRUE, adjusts for correlations between predictors
-#varImpAuc(regressor) #more robust towards class imbalance
+
+# fit the random forest with default parameter
+regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE,na.action=na.roughfix) 
+
+# get variable importance, based on mean decrease in accuracy
+caret::varImp(regressor) 
+
+# conditional=True, adjusts for correlations between predictors
+caret::varImp(regressor, conditional=TRUE) 
+
+
+
+
 
 #function to get all numerical variables
 num_vars <- 
@@ -307,6 +317,13 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
                        total_rec_prncp, revol_bal, total_acc, recoveries)) #removes values that have a correlation
+
+
+
+######################################################################################
+# Feature selection
+######################################################################################
+
 
 
 
