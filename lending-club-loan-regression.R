@@ -334,12 +334,8 @@ num_vars <-
   which() %>%
   names()
 
+#print an overview of the variables that we have
 meta_train <- funModeling::df_status(loan, print_results = FALSE)
-
-meta_train %>%
-  select(variable, p_zeros, p_na, unique) %>%
-  filter_(~ variable %in% num_vars ) %>%
-  knitr::kable() 
 
 #Show numerical variables with correlation as pie chart
 corrplot::corrplot(cor(loan[, num_vars], use = "complete.obs"),
@@ -351,15 +347,17 @@ loan.cor <- cor(loan[, num_vars]) #plot is printed as a table
 caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6) #prints correlation
 
-loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
-                       total_rec_prncp, revol_bal, total_acc, recoveries)) #removes values that have a correlation
-
-
 
 ######################################################################################
 # Feature selection
 ######################################################################################
+#removes values that have a correlation
+loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
+                               total_rec_prncp, revol_bal, total_acc, recoveries)) 
 
+#removes values that have a high percentage of zeros
+loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
+                               total_rec_late_fee, pub_rec, delinq_2yrs		))
 
 
 
