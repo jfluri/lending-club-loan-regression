@@ -287,7 +287,8 @@ caret::varImp(regressor)
 # conditional=True, adjusts for correlations between predictors
 caret::varImp(regressor, conditional=TRUE) 
 
-
+# scale = FALSE doesn't scale the results to 100
+caret::varImp(regressor, scale = FALSE)
 
 
 
