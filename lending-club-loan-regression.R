@@ -157,9 +157,6 @@ loan$na_count <- apply(loan, 1, function(x) sum(is.na(x)))
 # Highest Values --> 14 NA Values, therefore no general Action required --> na_count column is removed
 loan <- loan[,-c(45)]
 
-# Drop rows that have only a few NA's in a specific column --> We are not doing this as long as we don't have problems
-# loan <- loan %>% drop_na(delinq_2yrs)
-
 #list occurrences of values in specific fields to spot anomalies, blank values, etc.
 #as.data.frame(table(loan$grade)) 
 
@@ -251,9 +248,6 @@ loan[is.na(loan[,42]), 42] <- mean(loan[,42], na.rm = TRUE)
 
 # mths_since_last_deling - 20
 loan[is.na(loan[,20]), 20] <- mean(loan[,20], na.rm = TRUE) 
-
-# revol_bal - 23
-loan[is.na(loan[,23]), 23] <- mean(loan[,23], na.rm = TRUE) 
 
 # revol_util - 24
 loan[is.na(loan[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
@@ -380,3 +374,48 @@ outputs <- loan$int_rate
 m_ridge <- glmnet(predictors, outputs, alpha = 0) # calling ridge regression by using alpha=0.
 #TODO: this causes an error because the numbers don't match. Problem because of NAs?
 
+
+
+#### LASSO Regression
+# Important to avoid overfitting
+# Important to select only the important predictor variables
+
+# Tuning parameters
+# alpha - mixing percentage (alpha = 1 (lasso regression))
+# lambda - regularization tuning parameter
+
+# 10-fold cross validation (temporary reduced to 5 folds)
+validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
+
+# set random lambdas between 5 and -5
+lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
+
+# set seed again
+set.seed(1)
+
+# creat the model with lasso regression
+# The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
+model_lasso <- train(int_rate ~ .,
+                     data=loan.Train,
+                     preProcess=c("center","scale"),
+                     method="glmnet",
+                     tuneGrid=expand.grid(alpha=1, lambda=lambdas),
+                     trControl=validationspec,
+                     na.action=na.omit)
+
+# find best tuning parameters for alpha and lambda
+model_lasso$bestTune
+
+# analyze which attributes are removed from the model
+coef(model_lasso$finalModel, model_lasso$bestTune$lambda) #Attributes with the value 0 are removed from the model
+
+# Show the most important attributes
+varImp(model_lasso)
+ggplot(varImp(model_lasso))
+
+
+### Prediction against the testdata
+prediction_lasso <- predict(model_lasso, newdata=loan.Test)
+
+prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_rate),
+                                    RSquared=R2(prediction_lasso, loan.Test$int_rate))
