@@ -45,6 +45,7 @@ library(stringi)
 library(dplyr)
 
 
+
 ######################################################################################
 # Set the working directory to the folder with the data and load data
 ######################################################################################
@@ -252,8 +253,27 @@ loan[is.na(loan[,20]), 20] <- mean(loan[,20], na.rm = TRUE)
 # revol_util - 24
 loan[is.na(loan[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
 
+# total_acc - 25
+loan[is.na(loan[,25]), 25] <- mean(loan[,25], na.rm = TRUE) 
+
+# annual_inc - 10
+loan[is.na(loan[,10]), 10] <- mean(loan[,10], na.rm = TRUE) 
+
+# delinq_2yrs - 17
+loan[is.na(loan[,17]), 17] <- mean(loan[,17], na.rm = TRUE) 
+
+# inq_last_6mths - 19
+loan[is.na(loan[,19]), 19] <- mean(loan[,19], na.rm = TRUE) 
+
+# open_acc - 21
+loan[is.na(loan[,21]), 21] <- mean(loan[,21], na.rm = TRUE) 
+
+# pub_rec - 22
+loan[is.na(loan[,22]), 22] <- mean(loan[,22], na.rm = TRUE) 
+
 
 # for categorical values the mode is set instead of the missing value for the following columns
+
 
 # set the mode function
 Mode <- function(x) {
@@ -261,19 +281,45 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
+# earliest_cr_line - 18
+loan[is.na(loan[,18]), 18] <- Mode(loan[,18]) 
+
 # next_pymnt_d - 37
 loan[is.na(loan[,37]), 37] <- Mode(loan[,37]) 
 
+# last_pymnt_d - 35
+loan[is.na(loan[,35]), 35] <- Mode(loan[,35]) 
+
+# last_credit_pull_d - 38
+loan[is.na(loan[,38]), 38] <- Mode(loan[,38]) 
+
+# collections_12_mths_ex_med - 39
+loan[is.na(loan[,39]), 39] <- Mode(loan[,39]) 
+
+# acc_now_delinq - 41
+loan[is.na(loan[,41]), 41] <- Mode(loan[,41]) 
+
 
 ######################################################################################
-# Feature selection
+# ATTRIBUTE IMPORTANCE
 ######################################################################################
+# Overview of possibilities: https://www.linkedin.com/pulse/how-find-most-important-variables-r-amit-jain/
+# Getting the attribute importance of variables in our dataset
 
-#TODO does this work? - would be nice if it would tell us which attributes are important
-#regressor <- randomForest(int_rate ~ .,data = loan, importance=TRUE)
-#varImp(regressor) #get variable importance, based on mean decrease in accuracy
-#varImp(regressor, conitional = TRUE) #conditional = TRUE, adjusts for correlations between predictors
-#varImpAuc(regressor) #more robust towards class imbalance
+
+# fit the random forest with default parameter
+regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE) #,na.action=na.roughfix 
+
+# get variable importance, based on mean decrease in accuracy
+caret::varImp(regressor) 
+
+# conditional=True, adjusts for correlations between predictors
+caret::varImp(regressor, conditional=TRUE) 
+
+# scale = FALSE doesn't scale the results to 100
+caret::varImp(regressor, scale = FALSE)
+
+
 
 #function to get all numerical variables
 num_vars <- 
@@ -282,12 +328,8 @@ num_vars <-
   which() %>%
   names()
 
+#print an overview of the variables that we have
 meta_train <- funModeling::df_status(loan, print_results = FALSE)
-
-meta_train %>%
-  select(variable, p_zeros, p_na, unique) %>%
-  filter_(~ variable %in% num_vars ) %>%
-  knitr::kable() 
 
 #Show numerical variables with correlation as pie chart
 corrplot::corrplot(cor(loan[, num_vars], use = "complete.obs"),
@@ -299,8 +341,17 @@ loan.cor <- cor(loan[, num_vars]) #plot is printed as a table
 caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6) #prints correlation
 
+
+######################################################################################
+# Feature selection
+######################################################################################
+#removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
-                       total_rec_prncp, revol_bal, total_acc, recoveries)) #removes values that have a correlation
+                               total_rec_prncp, revol_bal, total_acc, recoveries)) 
+
+#removes values that have a high percentage of zeros
+loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
+                               total_rec_late_fee, pub_rec, delinq_2yrs		))
 
 
 
