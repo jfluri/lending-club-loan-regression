@@ -397,17 +397,27 @@ loan.Test <- loan[-train,] # test data
 mymodel <- lm(int_rate~.,data=loan.Train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
-vif(ourmodels[[1]])
-plot(ourmodels[[1]])
+#vif(ourmodels[[1]])
+#plot(ourmodels[[1]])
 # Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
 # Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
 # would be expected if they truly came from a Normal distribution.
 
 mymodel <- lm(int_rate~grade,data=loan.Train)
-append(ourmodels,mymodel, after = length(ourmodels))
 ourmodels[[2]] <- mymodel
 summary(ourmodels[[2]])
+par(mfrow=c(2,2))
 plot(ourmodels[[2]])
+
+#predict against test data
+pred <- predict(mymodel, newdata = loan.Test)
+
+par(mfrow=c(1,1))
+plot(loan.Test$int_rate, pred)
+
+prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
+                                    RSquared=R2(pred, loan.Test$int_rate))
+
 
 
 #This stepAIC approach runs quite long and does not provide a good model
