@@ -397,6 +397,37 @@ loan.Test <- loan[-train,] # test data
 mymodel <- lm(int_rate~.,data=loan.Train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
+BIC(mymodel) #1884852
+
+#Remove variables with less or no significance due to linear model
+#loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
+mymodel_fixed <- lm(int_rate~. -earliest_cr_line,data=loan.Train)
+summary(mymodel_fixed)
+BIC(mymodel_fixed) #1885245
+
+mymodel_fixed2 <- lm(int_rate~. -earliest_cr_line -addr_state,data=loan.Train)
+summary(mymodel_fixed2)
+BIC(mymodel_fixed2) #1884786
+
+mymodel_fixed3 <- lm(int_rate~. -earliest_cr_line -addr_state -home_ownership,data=loan.Train)
+summary(mymodel_fixed3)
+BIC(mymodel_fixed3) #1885320
+
+remove(mymodel_fixed5)
+mymodel_fixed4 <- lm(int_rate~.-earliest_cr_line -addr_state -installment,data=loan.Train)
+summary(mymodel_fixed4)
+BIC(mymodel_fixed4) #1884781
+
+mymodel_fixed5 <- lm(int_rate~. -addr_state -installment,data=loan.Train)
+summary(mymodel_fixed5)
+BIC(mymodel_fixed5) #1884398
+anova(mymodel_fixed5)
+
+mymodel_fixed6 <- lm(int_rate~. -out_prncp_inv -addr_state -installment,data=loan.Train)
+summary(mymodel_fixed6)
+BIC(mymodel_fixed6) #1884820
+
+
 #vif(ourmodels[[1]])
 #plot(ourmodels[[1]])
 # Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
