@@ -8,6 +8,7 @@
 ########## COACHING QUESTIONS ##########
 # How can results or modelling attempts be saved to be able to compare them later on and 
 # have an overview of the different attempts that have been made. #292
+# Do we have to replicate all changes from the training data set to the test data set? e.g. when filling in NAs, fill them in by the means from training DS? #265?
 
 
 ######################################################################################
@@ -61,6 +62,8 @@ set.seed (1)
 
 # Load the csv file of the regression train data into the data object allData
 allData<- read.csv("regression_train_loan.csv",header= TRUE,sep = ",",quote="\"",dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
+# Load the csv file of the test data in the data object allData_test
+allData_test<- read.csv("loan_eval.csv",header= TRUE,sep = ",",quote="\"",dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
 
 # Print the head of the data object allData
 head(allData)
@@ -102,7 +105,7 @@ meta_loans %>%
 # 53: policy_code
 # 57: verification_status_joint
 loan <- allData[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
-
+loan_test <- allData_test[,-c(1,2,3,11,12,19,20,21,23,24,37,53,57)]
 # Print the summary of the new smaller dataset
 summary(loan)
 
@@ -112,7 +115,9 @@ summary(loan)
 
 # In order to count NA, we first have to get rid of all blank or "n/a" (e.g. in emp_length) values.
 loan[loan==""] <- NA
+loan_test[loan_test==""] <- NA
 loan[loan=="n/a"] <- NA
+loan_test[loan_test=="n/a"] <- NA
 
 # Data frame is created of our dataset
 loan.column <- as.data.frame(colnames(loan))
@@ -147,6 +152,7 @@ loan.column$NA_percent <- loan.column$NAs / nrow(loan)
 
 # Remove columes with more than 70% NA Values
 loan <- loan[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
+loan_test <- loan_test[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62)]
 
 # Remove rows with more than 70% NA Values --> There are none in our dataset
 
@@ -174,6 +180,12 @@ loan$last_pymnt_d <- substr(loan$last_pymnt_d,5,8)
 loan$next_pymnt_d <- substr(loan$next_pymnt_d,5,8)
 loan$last_credit_pull_d <- substr(loan$last_credit_pull_d,5,8)
 
+loan_test$issue_d <- substr(loan_test$issue_d,5,8)
+loan_test$earliest_cr_line <- substr(loan_test$earliest_cr_line,5,8)
+loan_test$last_pymnt_d <- substr(loan_test$last_pymnt_d,5,8)
+loan_test$next_pymnt_d <- substr(loan_test$next_pymnt_d,5,8)
+loan_test$last_credit_pull_d <- substr(loan_test$last_credit_pull_d,5,8)
+
 # Print summary of last_pymnt_d
 summary(loan$last_pymnt_d)
 
@@ -187,17 +199,25 @@ loan$last_pymnt_d <- factor(loan$last_pymnt_d, order = TRUE)
 loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
 loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 
+loan_test$issue_d <- factor(loan_test$issue_d, order = TRUE)
+loan_test$earliest_cr_line <- factor(loan_test$earliest_cr_line, order = TRUE)
+loan_test$last_pymnt_d <- factor(loan_test$last_pymnt_d, order = TRUE)
+loan_test$next_pymnt_d <- factor(loan_test$next_pymnt_d, order = TRUE)
+loan_test$last_credit_pull_d <- factor(loan_test$last_credit_pull_d, order = TRUE)
+
 # check the distribution of the grade variable
 as.data.frame(table(loan$grade)) 
 
 # Convert loan$grade to ordinal and put it into the correct order
-loan$grade <- factor(loan$grade, order = TRUE) 
+loan$grade <- factor(loan$grade, order = TRUE)
+loan_test$grade <- factor(loan_test$grade, order = TRUE)
 
 # check emp_length - the categories are strings and have to be converted to numeric
 as.data.frame(table(loan$emp_length)) 
 
 # Convert emp_length to numeric values - Only the numbers are extracted
 loan$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan$emp_length))
+loan_test$emp_length <- as.numeric(gsub("[^0-9.]", "",  loan_test$emp_length))
 
 # check the distribution of home_ownership
 as.data.frame(table(loan$home_ownership)) 
@@ -224,6 +244,7 @@ as.data.frame(table(loan$addr_state))
 
 #Convert variable application type as factor variable
 loan$application_type <- factor(loan$application_type)
+loan_test$application_type <- factor(loan_test$application_type)
 
 
 ######################################################################################
@@ -233,6 +254,7 @@ loan$application_type <- factor(loan$application_type)
 # For the emp_length value: we assume that missing values are values smaller than 1 year
 # Therefore we fill missing values with 0 and set NA to 0 
 loan$emp_length[is.na(loan$emp_length)] <- 0 
+loan_test$emp_length[is.na(loan_test$emp_length)] <- 0 
 
 # Replace NA Values with mean (for numerical values) or with the mode (for categorical values) 
 # in columns that have less than 70% NA
@@ -240,36 +262,47 @@ loan$emp_length[is.na(loan$emp_length)] <- 0
 # for numerical values the mean is set instead of the missing value for the following columns
 # tot_cur_bal - 43
 loan[is.na(loan[,43]), 43] <- mean(loan[,43], na.rm = TRUE) 
+loan_test[is.na(loan_test[,43]), 43] <- mean(loan[,43], na.rm = TRUE) #we must fill in the means of our training data, not test data!
 
 # total_rev_hi_lim - 44
 loan[is.na(loan[,44]), 44] <- mean(loan[,44], na.rm = TRUE) 
+loan_test[is.na(loan_test[,44]), 44] <- mean(loan[,44], na.rm = TRUE) 
 
 # tot_coll_amt - 42
-loan[is.na(loan[,42]), 42] <- mean(loan[,42], na.rm = TRUE) 
+loan[is.na(loan[,42]), 42] <- mean(loan[,42], na.rm = TRUE)
+loan_test[is.na(loan_test[,42]), 42] <- mean(loan[,42], na.rm = TRUE)
 
 # mths_since_last_deling - 20
 loan[is.na(loan[,20]), 20] <- mean(loan[,20], na.rm = TRUE) 
+loan_test[is.na(loan_test[,20]), 20] <- mean(loan[,20], na.rm = TRUE) 
 
 # revol_util - 24
 loan[is.na(loan[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
+loan_test[is.na(loan_test[,24]), 24] <- mean(loan[,24], na.rm = TRUE) 
 
 # total_acc - 25
 loan[is.na(loan[,25]), 25] <- mean(loan[,25], na.rm = TRUE) 
+loan_test[is.na(loan_test[,25]), 25] <- mean(loan[,25], na.rm = TRUE) 
 
 # annual_inc - 10
 loan[is.na(loan[,10]), 10] <- mean(loan[,10], na.rm = TRUE) 
+loan_test[is.na(loan_test[,10]), 10] <- mean(loan[,10], na.rm = TRUE) 
 
 # delinq_2yrs - 17
 loan[is.na(loan[,17]), 17] <- mean(loan[,17], na.rm = TRUE) 
+loan_test[is.na(loan_test[,17]), 17] <- mean(loan[,17], na.rm = TRUE) 
 
 # inq_last_6mths - 19
 loan[is.na(loan[,19]), 19] <- mean(loan[,19], na.rm = TRUE) 
+loan_test[is.na(loan_test[,19]), 19] <- mean(loan[,19], na.rm = TRUE) 
 
 # open_acc - 21
 loan[is.na(loan[,21]), 21] <- mean(loan[,21], na.rm = TRUE) 
+loan_test[is.na(loan_test[,21]), 21] <- mean(loan[,21], na.rm = TRUE) 
 
 # pub_rec - 22
 loan[is.na(loan[,22]), 22] <- mean(loan[,22], na.rm = TRUE) 
+loan_test[is.na(loan_test[,22]), 22] <- mean(loan[,22], na.rm = TRUE) 
 
 
 # for categorical values the mode is set instead of the missing value for the following columns
@@ -283,21 +316,27 @@ Mode <- function(x) {
 
 # earliest_cr_line - 18
 loan[is.na(loan[,18]), 18] <- Mode(loan[,18]) 
+loan_test[is.na(loan_test[,18]), 18] <- Mode(loan[,18]) #we must fill in the modes of our training data, not test data!
 
 # next_pymnt_d - 37
 loan[is.na(loan[,37]), 37] <- Mode(loan[,37]) 
+loan_test[is.na(loan_test[,37]), 37] <- Mode(loan[,37]) 
 
 # last_pymnt_d - 35
 loan[is.na(loan[,35]), 35] <- Mode(loan[,35]) 
+loan_test[is.na(loan_test[,35]), 35] <- Mode(loan[,35]) 
 
 # last_credit_pull_d - 38
 loan[is.na(loan[,38]), 38] <- Mode(loan[,38]) 
+loan_test[is.na(loan_test[,38]), 38] <- Mode(loan[,38]) 
 
 # collections_12_mths_ex_med - 39
 loan[is.na(loan[,39]), 39] <- Mode(loan[,39]) 
+loan_test[is.na(loan_test[,39]), 39] <- Mode(loan[,39]) 
 
 # acc_now_delinq - 41
 loan[is.na(loan[,41]), 41] <- Mode(loan[,41]) 
+loan_test[is.na(loan_test[,41]), 41] <- Mode(loan[,41]) 
 
 
 ######################################################################################
@@ -348,19 +387,25 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 #removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
                                total_rec_prncp, revol_bal, total_acc, recoveries)) 
+loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
+                               total_rec_prncp, revol_bal, total_acc, recoveries)) 
 
 #removes values that have a high percentage of zeros
 loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
+                               total_rec_late_fee, pub_rec, delinq_2yrs		))
+loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
                                total_rec_late_fee, pub_rec, delinq_2yrs		))
 
 
 
 ########## SPLITTING TEST/TRAINING DATA ##########
 
-train=sample(nrow(loan),nrow(loan)*0.8) # indices of a training data (80%)
-loan.Train <- loan[train,] # training data 
-loan.Test <- loan[-train,] # test data
+#train=sample(nrow(loan),nrow(loan)*0.8) # indices of a training data (80%)
+#loan.Train <- loan[train,] # training data 
+#loan.Test <- loan[-train,] # test data
 
+loan.Train <- loan # training data (already split by file)
+loan.Test <- loan_test # test data (already split by file)
 
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
@@ -511,3 +556,15 @@ prediction_lasso <- predict(model_lasso, newdata=loan.Test)
 
 prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_rate),
                                     RSquared=R2(prediction_lasso, loan.Test$int_rate))
+
+
+
+
+
+######################################################################################
+# Assignment 2: Classification by Neural Networks
+######################################################################################
+
+
+
+
