@@ -9,6 +9,7 @@
 # How can results or modelling attempts be saved to be able to compare them later on and 
 # have an overview of the different attempts that have been made. #292
 # Do we have to replicate all changes from the training data set to the test data set? e.g. when filling in NAs, fill them in by the means from training DS? #265?
+# In the example of predicting house prices (line 79) we used the scale() function to normalize the features. For this assignment we should use values between 0 and 1. why?
 
 
 ######################################################################################
@@ -44,6 +45,7 @@ library(MASS)
 library(tidyr)
 library(stringi)
 library(dplyr)
+library(keras)
 
 
 
@@ -565,6 +567,37 @@ prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_ra
 # Assignment 2: Classification by Neural Networks
 ######################################################################################
 
+# Preparation of Test & Training Data:
+#  Removing loan_status == Current
+#  Set everything but "Fully Paid" to "DEFAULTED" from the remaining loan_status entries.
+
+nn.Train <- loan[loan$loan_status != "Current", ]
+nn.Test <- loan_test[loan_test$loan_status != "Current", ]
+
+nn.Train$loan_status[nn.Train$loan_status!="Fully Paid"] <- "DEFAULTED"
+nn.Test$loan_status[nn.Test$loan_status!="Fully Paid"] <- "DEFAULTED"
+
+
+# Create matrix of floating numbers
+
+nn.Train <- data.matrix(nn.Train)
+nn.Test <- data.matrix(nn.Test)
+
+
+# Normalizing the the numbers by scaling around 0. Important: only use mean and std from training data for scaling!
+
+mean <- apply(nn.Train, 2, mean)
+std <- apply(nn.Train, 2, sd)
+nn.Train <- scale(nn.Train, center = mean, scale = std)
+nn.Test <- scale(nn.Test, center = mean, scale = std)
+
+#nn.Train <- apply(m,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1.
+#nn.Test <- apply(m,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1. <- not allowed to scale by test data values
+
+
+network <- keras_model_sequential() %>% #input layer
+  layer_dense(units = 64, activation = "relu", input_shape = c(26)) %>% 
+  layer_dense(units = 1, activation = "sigmoid")
 
 
 
