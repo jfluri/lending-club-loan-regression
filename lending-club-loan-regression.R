@@ -602,51 +602,27 @@ nn.Train <- array_reshape(nn.Train, c(nrow(nn.Train), 26))
 nn.Test <- array_reshape(nn.Test, c(nrow(nn.Test), 26))
 
 
-# Normalizing the the numbers by scaling around 0. Important: only use mean and std from training data for scaling!
+# Normalizing the numbers by scaling around 0. Important: only use mean and std from training data for scaling!
 #mean <- apply(nn.Train, 2, mean)
 #std <- apply(nn.Train, 2, sd)
 #nn.Train <- scale(nn.Train, center = mean, scale = std)
 #nn.Test <- scale(nn.Test, center = mean, scale = std)
 
+#Normalizing the numbers by scaling between 0 and 1. 
 min <- apply(nn.Train, 2, min)
 range <- apply(nn.Train, 2, range)
 
 nn.Train <- apply(nn.Train,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1.
 #nn.Test <- apply(nn.Test,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1. <- not allowed to scale by test data values
 
-nn.Test[,1] <- (nn.Test[,1] - min[1]) / diff(range[,1])
-nn.Test[,2] <- (nn.Test[,2] - min[2]) / diff(range[,2])
-nn.Test[,3] <- (nn.Test[,3] - min[3]) / diff(range[,3])
-nn.Test[,4] <- (nn.Test[,4] - min[4]) / diff(range[,4])
-nn.Test[,5] <- (nn.Test[,5] - min[5]) / diff(range[,5])
-nn.Test[,6] <- (nn.Test[,6] - min[6]) / diff(range[,6])
-nn.Test[,7] <- (nn.Test[,7] - min[7]) / diff(range[,7])
-nn.Test[,8] <- (nn.Test[,8] - min[8]) / diff(range[,8])
-nn.Test[,9] <- (nn.Test[,9] - min[9]) / diff(range[,9])
-nn.Test[,10] <- (nn.Test[,10] - min[10]) / diff(range[,10])
-nn.Test[,11] <- (nn.Test[,11] - min[11]) / diff(range[,11])
-nn.Test[,12] <- (nn.Test[,12] - min[12]) / diff(range[,12])
-nn.Test[,13] <- (nn.Test[,13] - min[13]) / diff(range[,13])
-nn.Test[,14] <- (nn.Test[,14] - min[14]) / diff(range[,14])
-nn.Test[,15] <- (nn.Test[,15] - min[15]) / diff(range[,15])
-nn.Test[,16] <- (nn.Test[,16] - min[16]) / diff(range[,16])
-nn.Test[,17] <- (nn.Test[,17] - min[17]) / diff(range[,17])
-nn.Test[,18] <- (nn.Test[,18] - min[18]) / diff(range[,18])
-nn.Test[,19] <- (nn.Test[,19] - min[19]) / diff(range[,19])
-nn.Test[,20] <- (nn.Test[,20] - min[20]) / diff(range[,20])
-nn.Test[,21] <- (nn.Test[,21] - min[21]) / diff(range[,21])
-nn.Test[,22] <- (nn.Test[,22] - min[22]) / diff(range[,22])
-nn.Test[,23] <- (nn.Test[,23] - min[23]) / diff(range[,23])
-nn.Test[,24] <- (nn.Test[,24] - min[24]) / diff(range[,24])
-nn.Test[,25] <- (nn.Test[,25] - min[25]) / diff(range[,25])
-nn.Test[,26] <- (nn.Test[,26] - min[26]) / diff(range[,26])
-
+for(i in 1:26){ #scale Test data by Training data values
+  nn.Test[,i] <- (nn.Test[,i] - min[i]) / diff(range[,i])
+}
 summary(nn.Test)
 
 
 # setting apart the validation set
-#val_indices <- sample(nrow(nn.Train),nrow(nn.Train)*0.3) # indices of a validation data (30% of training data)
-val_indices <- 1:50000
+val_indices <- sample(nrow(nn.Train),nrow(nn.Train)*0.3) # indices of a validation data (30% of training data)
 
 nn.Val <- nn.Train[val_indices,] # validation data
 nn.Val_y <- nn.Train_y[val_indices]
@@ -654,10 +630,18 @@ nn.Val_y <- nn.Train_y[val_indices]
 nn.Train <- nn.Train[-val_indices,] # training data
 nn.Train_y <- nn.Train_y[-val_indices]
 
+set.seed(1)
 # defining the network
 network <- keras_model_sequential() %>%
   layer_dense(units = 16, activation = "relu", input_shape = c(26)) %>%
-  layer_dense(units = 16, activation = "relu") %>% 
+  layer_dense(units = 16, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
+  #layer_dense(units = 128, activation = "relu") %>%
   layer_dense(units = 1, activation = "sigmoid")
   #layer_dense(units = 2, activation = "softmax")
 
@@ -665,6 +649,7 @@ network <- keras_model_sequential() %>%
 network %>% compile(
   optimizer = "rmsprop",
   loss = "binary_crossentropy",
+  #loss = "mse",
   metrics = c("accuracy")
 )
 
@@ -672,7 +657,7 @@ network %>% compile(
 history <- network %>% fit(
   nn.Train,
   nn.Train_y,
-  epochs = 20,
+  epochs = 5,
   batch_size = 512,
   validation_data = list(nn.Val, nn.Val_y)
 )
