@@ -194,22 +194,35 @@ loan_test$last_credit_pull_d <- substr(loan_test$last_credit_pull_d,5,8)
 
 # Print summary of last_pymnt_d
 summary(loan$last_pymnt_d)
+str(loan$last_pymnt_d) #year data is chr. but should be numeric
+
+loan$issue_d <- as.numeric(loan$issue_d)
+loan$earliest_cr_line <- as.numeric(loan$earliest_cr_line)
+loan$last_pymnt_d <- as.numeric(loan$last_pymnt_d)
+loan$next_pymnt_d <- as.numeric(loan$next_pymnt_d)
+loan$last_credit_pull_d <- as.numeric(loan$last_credit_pull_d)
+
+loan_test$issue_d <- as.numeric(loan_test$issue_d)
+loan_test$earliest_cr_line <- as.numeric(loan_test$earliest_cr_line)
+loan_test$last_pymnt_d <- as.numeric(loan_test$last_pymnt_d)
+loan_test$next_pymnt_d <- as.numeric(loan_test$next_pymnt_d)
+loan_test$last_credit_pull_d <- as.numeric(loan_test$last_credit_pull_d)
 
 # summary(loan$last_pymnt_d) --> Based on this output we changed the values to ordinal
 
 # Make year values ordinal (string to ordinal) of the date fields
 # The order = TRUE puts the years in the correct order
-loan$issue_d <- factor(loan$issue_d, order = TRUE)
-loan$earliest_cr_line <- factor(loan$earliest_cr_line, order = TRUE)
-loan$last_pymnt_d <- factor(loan$last_pymnt_d, order = TRUE)
-loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
-loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
+# loan$issue_d <- factor(loan$issue_d, order = TRUE)
+# loan$earliest_cr_line <- factor(loan$earliest_cr_line, order = TRUE)
+# loan$last_pymnt_d <- factor(loan$last_pymnt_d, order = TRUE)
+# loan$next_pymnt_d <- factor(loan$next_pymnt_d, order = TRUE)
+# loan$last_credit_pull_d <- factor(loan$last_credit_pull_d, order = TRUE)
 
-loan_test$issue_d <- factor(loan_test$issue_d, order = TRUE)
-loan_test$earliest_cr_line <- factor(loan_test$earliest_cr_line, order = TRUE)
-loan_test$last_pymnt_d <- factor(loan_test$last_pymnt_d, order = TRUE)
-loan_test$next_pymnt_d <- factor(loan_test$next_pymnt_d, order = TRUE)
-loan_test$last_credit_pull_d <- factor(loan_test$last_credit_pull_d, order = TRUE)
+# loan_test$issue_d <- factor(loan_test$issue_d, order = TRUE)
+# loan_test$earliest_cr_line <- factor(loan_test$earliest_cr_line, order = TRUE)
+# loan_test$last_pymnt_d <- factor(loan_test$last_pymnt_d, order = TRUE)
+# loan_test$next_pymnt_d <- factor(loan_test$next_pymnt_d, order = TRUE)
+# loan_test$last_credit_pull_d <- factor(loan_test$last_credit_pull_d, order = TRUE)
 
 # check the distribution of the grade variable
 as.data.frame(table(loan$grade)) 
@@ -647,7 +660,8 @@ network <- keras_model_sequential() %>%
 
 # defining the optimizer and loss function
 network %>% compile(
-  optimizer = "rmsprop",
+  #optimizer = "rmsprop",
+  optimizer = optimizer_rmsprop(lr = 1e-4),
   loss = "binary_crossentropy",
   #loss = "mse",
   metrics = c("accuracy")
@@ -657,7 +671,7 @@ network %>% compile(
 history <- network %>% fit(
   nn.Train,
   nn.Train_y,
-  epochs = 5,
+  epochs = 25,
   batch_size = 512,
   validation_data = list(nn.Val, nn.Val_y)
 )
