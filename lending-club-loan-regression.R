@@ -448,35 +448,35 @@ loan.Test <- loan_test # test data (already split by file)
 mymodel <- lm(int_rate~.,data=loan.Train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
-BIC(mymodel) #1884852
+BIC(mymodel) #2355588
 
 #Remove variables with less or no significance due to linear model
 #loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
 mymodel_fixed <- lm(int_rate~. -earliest_cr_line,data=loan.Train)
 summary(mymodel_fixed)
-BIC(mymodel_fixed) #1885245
+BIC(mymodel_fixed) #2356292
 
 mymodel_fixed2 <- lm(int_rate~. -earliest_cr_line -addr_state,data=loan.Train)
 summary(mymodel_fixed2)
-BIC(mymodel_fixed2) #1884786
+BIC(mymodel_fixed2) #2355850
 
 mymodel_fixed3 <- lm(int_rate~. -earliest_cr_line -addr_state -home_ownership,data=loan.Train)
 summary(mymodel_fixed3)
-BIC(mymodel_fixed3) #1885320
+BIC(mymodel_fixed3) #2356503
 
 remove(mymodel_fixed5)
 mymodel_fixed4 <- lm(int_rate~.-earliest_cr_line -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed4)
-BIC(mymodel_fixed4) #1884781
+BIC(mymodel_fixed4) #2355847
 
 mymodel_fixed5 <- lm(int_rate~. -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed5)
-BIC(mymodel_fixed5) #1884398
+BIC(mymodel_fixed5) #2355151
 anova(mymodel_fixed5)
 
 mymodel_fixed6 <- lm(int_rate~. -out_prncp_inv -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed6)
-BIC(mymodel_fixed6) #1884820
+BIC(mymodel_fixed6) #2355703
 
 
 #vif(ourmodels[[1]])
