@@ -461,35 +461,35 @@ loan.Test <- loan_test # test data (already split by file)
 mymodel <- lm(int_rate~.,data=loan.Train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
-BIC(mymodel) #1884852
+BIC(mymodel) #2355588
 
 #Remove variables with less or no significance due to linear model
 #loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
 mymodel_fixed <- lm(int_rate~. -earliest_cr_line,data=loan.Train)
 summary(mymodel_fixed)
-BIC(mymodel_fixed) #1885245
+BIC(mymodel_fixed) #2356292
 
 mymodel_fixed2 <- lm(int_rate~. -earliest_cr_line -addr_state,data=loan.Train)
 summary(mymodel_fixed2)
-BIC(mymodel_fixed2) #1884786
+BIC(mymodel_fixed2) #2355850
 
 mymodel_fixed3 <- lm(int_rate~. -earliest_cr_line -addr_state -home_ownership,data=loan.Train)
 summary(mymodel_fixed3)
-BIC(mymodel_fixed3) #1885320
+BIC(mymodel_fixed3) #2356503
 
 remove(mymodel_fixed5)
 mymodel_fixed4 <- lm(int_rate~.-earliest_cr_line -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed4)
-BIC(mymodel_fixed4) #1884781
+BIC(mymodel_fixed4) #2355847
 
 mymodel_fixed5 <- lm(int_rate~. -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed5)
-BIC(mymodel_fixed5) #1884398
+BIC(mymodel_fixed5) #2355151
 anova(mymodel_fixed5)
 
 mymodel_fixed6 <- lm(int_rate~. -out_prncp_inv -addr_state -installment,data=loan.Train)
 summary(mymodel_fixed6)
-BIC(mymodel_fixed6) #1884820
+BIC(mymodel_fixed6) #2355703
 
 
 #vif(ourmodels[[1]])
@@ -521,24 +521,46 @@ prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
 #step$anova
 
 
-# Ridge & Lasso Regression
+##########  Ridge & Lasso Regression ########## 
 
-predictors <- model.matrix(int_rate ~ ., loan)[,-1] #TODO: we only get 10 rows, I guess because of all other rows containing NAs(?)
-head(predictors)
-outputs <- loan$int_rate
+# Tuning parameters
+# alpha - mixing percentage (alpha = 0 (ridge regression) / alpha = 1 (lasso regression))
+# lambda - regularization tuning parameter
 
-m_ridge <- glmnet(predictors, outputs, alpha = 0) # calling ridge regression by using alpha=0.
-#TODO: this causes an error because the numbers don't match. Problem because of NAs?
+#### Ridge Regression
+# 10-fold cross validation (temporary reduced to 5 folds)
+validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
 
+# set random lambdas between 5 and -5
+lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
+
+# set seed again
+set.seed(1)
+
+# creat the model with lasso regression
+# The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
+model_ridge <- train(int_rate ~ .,
+                     data=loan.Train,
+                     preProcess=c("center","scale"),
+                     method="glmnet",
+                     tuneGrid=expand.grid(alpha=0, lambda=lambdas),
+                     trControl=validationspec,
+                     na.action=na.omit)
+
+# Wheightening of the model
+coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
+
+### Prediction against the testdata
+prediction_ridge <- predict(model_ridge, newdata=loan.Test)
+
+prediction_ridge_perf <- data.frame(RMSE=RMSE(prediction_ridge, loan.Test$int_rate),
+                                    RSquared=R2(prediction_ridge, loan.Test$int_rate))
 
 
 #### LASSO Regression
 # Important to avoid overfitting
 # Important to select only the important predictor variables
 
-# Tuning parameters
-# alpha - mixing percentage (alpha = 1 (lasso regression))
-# lambda - regularization tuning parameter
 
 # 10-fold cross validation (temporary reduced to 5 folds)
 validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
