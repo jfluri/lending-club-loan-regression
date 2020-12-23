@@ -508,24 +508,46 @@ prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
 #step$anova
 
 
-# Ridge & Lasso Regression
+##########  Ridge & Lasso Regression ########## 
 
-predictors <- model.matrix(int_rate ~ ., loan)[,-1] #TODO: we only get 10 rows, I guess because of all other rows containing NAs(?)
-head(predictors)
-outputs <- loan$int_rate
+# Tuning parameters
+# alpha - mixing percentage (alpha = 0 (ridge regression) / alpha = 1 (lasso regression))
+# lambda - regularization tuning parameter
 
-m_ridge <- glmnet(predictors, outputs, alpha = 0) # calling ridge regression by using alpha=0.
-#TODO: this causes an error because the numbers don't match. Problem because of NAs?
+#### Ridge Regression
+# 10-fold cross validation (temporary reduced to 5 folds)
+validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
 
+# set random lambdas between 5 and -5
+lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
+
+# set seed again
+set.seed(1)
+
+# creat the model with lasso regression
+# The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
+model_ridge <- train(int_rate ~ .,
+                     data=loan.Train,
+                     preProcess=c("center","scale"),
+                     method="glmnet",
+                     tuneGrid=expand.grid(alpha=0, lambda=lambdas),
+                     trControl=validationspec,
+                     na.action=na.omit)
+
+# Wheightening of the model
+coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
+
+### Prediction against the testdata
+prediction_ridge <- predict(model_ridge, newdata=loan.Test)
+
+prediction_ridge_perf <- data.frame(RMSE=RMSE(prediction_ridge, loan.Test$int_rate),
+                                    RSquared=R2(prediction_ridge, loan.Test$int_rate))
 
 
 #### LASSO Regression
 # Important to avoid overfitting
 # Important to select only the important predictor variables
 
-# Tuning parameters
-# alpha - mixing percentage (alpha = 1 (lasso regression))
-# lambda - regularization tuning parameter
 
 # 10-fold cross validation (temporary reduced to 5 folds)
 validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
