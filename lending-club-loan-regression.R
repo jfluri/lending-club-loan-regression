@@ -416,15 +416,110 @@ loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq, collectio
                                total_rec_late_fee, pub_rec, delinq_2yrs		))
 
 
+######################################################################################
+# DATA SET ORGANIZATION (training & test) for regression models RM and neural networks NN
+# The data for neural networks is further processed for the second assignment. Do not use for regression models.
+# 
+# data frame (RM)
+# - loan.train
+# - loan.test
+# 
+# numeric matrix (RM, NN)
+# - num.loan.train
+# - num.loan.test
+# - nn.num.loan.train
+# - nn.num.loan.test
+#
+# scaled numeric matrix around 0 (RM, NN)
+# - sc0.loan.train
+# - sc0.loan.test
+# - nn.sc0.loan.train
+# - nn.sc0.loan.test
+#
+# scaled numeric matrix between 0 and 1 (RM, NN)
+# - sc01.loan.train
+# - sc01.loan.test
+# - nn.sc01.loan.train
+# - nn.sc01.loan.test
+#
+######################################################################################
 
-########## SPLITTING TEST/TRAINING DATA ##########
+# data frame (RM)
+loan.train <- loan # training data (already split by file)
+loan.test <- loan_test # test data (already split by file)
 
-#train=sample(nrow(loan),nrow(loan)*0.8) # indices of a training data (80%)
-#loan.Train <- loan[train,] # training data 
-#loan.Test <- loan[-train,] # test data
 
-loan.Train <- loan # training data (already split by file)
-loan.Test <- loan_test # test data (already split by file)
+# numeric matrix (RM)
+num.loan.train <- data.matrix(loan.train)
+num.loan.test <- data.matrix(loan.test)
+
+
+# scaled numeric matrix around 0 (RM)
+mean <- apply(num.loan.train, 2, mean) #only use training data for scaling
+std <- apply(num.loan.train, 2, sd)
+sc0.loan.train <- scale(num.loan.train, center = mean, scale = std)
+sc0.loan.test <- scale(num.loan.test, center = mean, scale = std)
+
+
+# scaled numeric matrix between 0 and 1 (RM)
+min <- apply(num.loan.train, 2, min)
+range <- apply(num.loan.train, 2, range)
+
+sc01.loan.train <- apply(num.loan.train, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1.
+#sc01.loan.test <- apply(num.loan.test, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1. <- not allowed to scale by test data values
+sc01.loan.test <- num.loan.test
+
+for(i in 1:length(num.loan.test[1,])){ #scale Test data by Training data values
+  sc01.loan.test[,i] <- (num.loan.test[,i] - min[i]) / diff(range[,i])
+}
+#summary(sc01.loan.test)
+
+
+
+# numeric matrix (NN)
+nn.num.loan.train <- loan.train[loan.train$loan_status != "Current", ] # omit "Current"
+nn.num.loan.test <- loan.test[loan.test$loan_status != "Current", ]
+
+nn.num.loan.train$loan_status[nn.num.loan.train$loan_status!="Fully Paid"] <- "DEFAULTED" # set everything but "Fully Paid" to "DEFAULTED"
+nn.num.loan.test$loan_status[nn.num.loan.test$loan_status!="Fully Paid"] <- "DEFAULTED"
+
+nn.num.loan.train <- nn.num.loan.train %>%
+  mutate(loan_status = ifelse(loan_status == "Fully Paid",1,0)) # make loan_status binary
+nn.num.loan.test <- nn.num.loan.test %>%
+  mutate(loan_status = ifelse(loan_status == "Fully Paid",1,0))
+
+nn.loan.train_y <- nn.num.loan.train[,10] # labels for training & testing data (loan_status)
+nn.loan.test_y <- nn.num.loan.test[,10]
+
+nn.num.loan.train <- data.matrix(nn.num.loan.train[,-10]) # Create matrix of floating numbers (exclude loan_status)
+nn.num.loan.test <- data.matrix(nn.num.loan.test[,-10])
+
+nn.num.loan.train <- array_reshape(nn.num.loan.train, c(nrow(nn.num.loan.train), length(nn.num.loan.train[1,])))
+nn.num.loan.test <- array_reshape(nn.num.loan.test, c(nrow(nn.num.loan.test), length(nn.num.loan.test[1,])))
+
+
+# scaled numeric matrix around 0 (NN)
+nn.mean <- apply(nn.num.loan.train, 2, mean) #only use training data for scaling
+nn.std <- apply(nn.num.loan.train, 2, sd)
+nn.sc0.loan.train <- scale(nn.num.loan.train, center = nn.mean, scale = nn.std)
+nn.sc0.loan.test <- scale(nn.num.loan.test, center = nn.mean, scale = nn.std)
+
+
+# scaled numeric matrix between 0 and 1 (NN)
+nn.min <- apply(nn.num.loan.train, 2, min)
+nn.range <- apply(nn.num.loan.train, 2, range)
+
+nn.sc01.loan.train <- apply(nn.num.loan.train, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1.
+#nn.sc01.loan.test <- apply(nn.num.loan.test, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1. <- not allowed to scale by test data values
+nn.sc01.loan.test <- nn.num.loan.test
+
+for(i in 1:length(nn.num.loan.test[1,])){ #scale Test data by Training data values
+  nn.sc01.loan.test[,i] <- (nn.num.loan.test[,i] - nn.min[i]) / diff(nn.range[,i])
+}
+#summary(nn.sc01.loan.test)
+
+
+
 
 
 ########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
@@ -606,64 +701,22 @@ prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_ra
 # Assignment 2: Classification by Neural Networks
 ######################################################################################
 
-# Preparation of Test & Training Data:
-#  Removing loan_status == Current
-#  Set everything but "Fully Paid" to "DEFAULTED" from the remaining loan_status entries.
-nn.Train <- loan[loan$loan_status != "Current", ]
-nn.Test <- loan_test[loan_test$loan_status != "Current", ]
-
-nn.Train$loan_status[nn.Train$loan_status!="Fully Paid"] <- "DEFAULTED"
-nn.Test$loan_status[nn.Test$loan_status!="Fully Paid"] <- "DEFAULTED"
-
-
-# make loan_status binary
-nn.Train <- nn.Train %>%
-  mutate(loan_status = ifelse(loan_status == "Fully Paid",1,0))
-
-nn.Test <- nn.Test %>%
-  mutate(loan_status = ifelse(loan_status == "Fully Paid",1,0))
-
-
-# labels for training & testing (loan_status)
-nn.Train_y <- nn.Train[,10]
-nn.Test_y <- nn.Test[,10]
-
-
-# Create matrix of floating numbers (exclude loan_status)
-nn.Train <- data.matrix(nn.Train[,-10])
-nn.Test <- data.matrix(nn.Test[,-10])
-
-nn.Train <- array_reshape(nn.Train, c(nrow(nn.Train), 26))
-nn.Test <- array_reshape(nn.Test, c(nrow(nn.Test), 26))
-
-
-# Normalizing the numbers by scaling around 0. Important: only use mean and std from training data for scaling!
-#mean <- apply(nn.Train, 2, mean)
-#std <- apply(nn.Train, 2, sd)
-#nn.Train <- scale(nn.Train, center = mean, scale = std)
-#nn.Test <- scale(nn.Test, center = mean, scale = std)
-
-#Normalizing the numbers by scaling between 0 and 1. 
-min <- apply(nn.Train, 2, min)
-range <- apply(nn.Train, 2, range)
-
-nn.Train <- apply(nn.Train,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1.
-#nn.Test <- apply(nn.Test,MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))) # convert matrix to floating numbers between 0 and 1. <- not allowed to scale by test data values
-
-for(i in 1:26){ #scale Test data by Training data values
-  nn.Test[,i] <- (nn.Test[,i] - min[i]) / diff(range[,i])
-}
-summary(nn.Test)
-
-
 # setting apart the validation set
-val_indices <- sample(nrow(nn.Train),nrow(nn.Train)*0.3) # indices of a validation data (30% of training data)
+nn.val_indices <- sample(nrow(nn.num.loan.train),nrow(nn.num.loan.train)*0.3) # indices of a validation data (30% of training data)
 
-nn.Val <- nn.Train[val_indices,] # validation data
-nn.Val_y <- nn.Train_y[val_indices]
+nn.num.loan.val <- nn.num.loan.train[nn.val_indices,] # validation data
+nn.sc0.loan.val <- nn.sc0.loan.train[nn.val_indices,]
+nn.sc01.loan.val <- nn.sc01.loan.train[nn.val_indices,]
 
-nn.Train <- nn.Train[-val_indices,] # training data
-nn.Train_y <- nn.Train_y[-val_indices]
+nn.loan.val_y <- nn.loan.train_y[nn.val_indices] # validation label (loan_status)
+
+
+nn.num.loan.train <- nn.num.loan.train[-nn.val_indices,] # training data
+nn.sc0.loan.train <- nn.sc0.loan.train[-nn.val_indices,]
+nn.sc01.loan.train <- nn.sc01.loan.train[-nn.val_indices,]
+
+nn.loan.train_y <- nn.loan.train_y[-nn.val_indices] # training label (loan_status)
+
 
 set.seed(1)
 # defining the network
@@ -691,14 +744,14 @@ network %>% compile(
 
 # let it run
 history <- network %>% fit(
-  nn.Train,
-  nn.Train_y,
+  nn.sc01.loan.train,
+  nn.loan.train_y,
   epochs = 25,
   batch_size = 512,
-  validation_data = list(nn.Val, nn.Val_y)
+  validation_data = list(nn.sc01.loan.val, nn.loan.val_y)
 )
 
-network %>% evaluate(nn.Test, nn.Test_y)
+network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y)
 
 
 
