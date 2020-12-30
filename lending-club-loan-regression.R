@@ -28,7 +28,8 @@
 Sys.setenv("CUDA_VISIBLE_DEVICES" = -1)
 
 libraries_used<-
-  c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", "leaps", "corrplot", "car","randomForest", "mlbench","tidyr","keras")
+  c("MASS","varImp","plyr", "dplyr", "glmnet", "caret", "tidyverse", "funModeling", 
+    "leaps", "corrplot", "car","randomForest", "mlbench","tidyr","keras")
 
 libraries_missing<-
   libraries_used[!(libraries_used %in% installed.packages()[,"Package"])]
@@ -67,9 +68,11 @@ setwd("C:/Users/Sebastian/OneDrive/School_Master/DataScience/Assignment") #Sebi
 set.seed (1)
 
 # Load the csv file of the regression train data into the data object allData
-allData<- read.csv("regression_train_loan.csv",header= TRUE,sep = ",",quote="\"",dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
+allData<- read.csv("regression_train_loan.csv",header= TRUE,sep = ",",quote="\"",
+                   dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
 # Load the csv file of the test data in the data object allData_test
-allData_test<- read.csv("loan_eval.csv",header= TRUE,sep = ",",quote="\"",dec=".",fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
+allData_test<- read.csv("loan_eval.csv",header= TRUE,sep = ",",quote="\"",dec=".",
+                        fill= TRUE,na.strings= "NA",blank.lines.skip= TRUE)
 
 # Print the head of the data object allData
 head(allData)
@@ -90,7 +93,6 @@ meta_loans <-
   mutate(uniq_rat = unique / nrow(allData))
 meta_loans
 # Get unique values in percentage  
-# TODO: Doesn't work!
 meta_loans %>%
   dplyr::select(variable, unique, uniq_rat) %>%
   mutate(unique = unique, uniq_rat = scales::percent(uniq_rat)) %>%
@@ -177,7 +179,6 @@ loan <- loan[,-c(45)]
 ######################################################################################
 # MODIFICATION OF DATE COLUMNS
 ######################################################################################
-# Dates have to be converted into categorical attributes for the regression
 
 # convert dates to year without days and month -> YYYY
 loan$issue_d <- substr(loan$issue_d,5,8)
@@ -196,6 +197,7 @@ loan_test$last_credit_pull_d <- substr(loan_test$last_credit_pull_d,5,8)
 summary(loan$last_pymnt_d)
 str(loan$last_pymnt_d) #year data is chr. but should be numeric
 
+# Years are treated as numeric values and not as categorical values
 loan$issue_d <- as.numeric(loan$issue_d)
 loan$earliest_cr_line <- as.numeric(loan$earliest_cr_line)
 loan$last_pymnt_d <- as.numeric(loan$last_pymnt_d)
@@ -404,16 +406,24 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 # Feature selection
 ######################################################################################
 #removes values that have a correlation
-loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
-                               total_rec_prncp, revol_bal, total_acc, recoveries)) 
-loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, total_pymnt_inv, out_prncp,
-                               total_rec_prncp, revol_bal, total_acc, recoveries)) 
+loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
+                               total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
+                               total_acc, recoveries)) 
+
+loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, 
+                                         total_pymnt, total_pymnt_inv, out_prncp,
+                                         total_rec_prncp, revol_bal, total_acc, 
+                                         recoveries)) 
 
 #removes values that have a high percentage of zeros
-loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
-                               total_rec_late_fee, pub_rec, delinq_2yrs		))
-loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, collection_recovery_fee, 
-                               total_rec_late_fee, pub_rec, delinq_2yrs		))
+loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, 
+                               collection_recovery_fee, total_rec_late_fee, pub_rec, 
+                               delinq_2yrs))
+
+loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq, 
+                                         collections_12_mths_ex_med, 
+                                         collection_recovery_fee, 
+                                         total_rec_late_fee, pub_rec, delinq_2yrs))
 
 
 ######################################################################################
