@@ -367,20 +367,6 @@ loan_test[is.na(loan_test[,41]), 41] <- Mode(loan[,41])
 # Getting the attribute importance of variables in our dataset
 
 
-# fit the random forest with default parameter
-regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE) #,na.action=na.roughfix 
-
-# get variable importance, based on mean decrease in accuracy
-caret::varImp(regressor) 
-
-# conditional=True, adjusts for correlations between predictors
-caret::varImp(regressor, conditional=TRUE) 
-
-# scale = FALSE doesn't scale the results to 100
-caret::varImp(regressor, scale = FALSE)
-
-
-
 #function to get all numerical variables
 num_vars <- 
   loan %>%
