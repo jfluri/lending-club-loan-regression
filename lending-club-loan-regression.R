@@ -361,11 +361,8 @@ loan_test[is.na(loan_test[,41]), 41] <- Mode(loan[,41])
 
 
 ######################################################################################
-# ATTRIBUTE IMPORTANCE
+# ATTRIBUTE IMPORTANCE / FEATURE SELECTION
 ######################################################################################
-# Overview of possibilities: https://www.linkedin.com/pulse/how-find-most-important-variables-r-amit-jain/
-# Getting the attribute importance of variables in our dataset
-
 
 #function to get all numerical variables
 num_vars <- 
@@ -388,9 +385,7 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6) #prints correlation
 
 
-######################################################################################
-# Feature selection
-######################################################################################
+
 #removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
                                total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
@@ -410,6 +405,14 @@ loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq,
                                          collections_12_mths_ex_med, 
                                          collection_recovery_fee, 
                                          total_rec_late_fee, pub_rec, delinq_2yrs))
+
+
+# Getting the attribute importance of variables in our dataset
+
+lm.testmodel = lm(int_rate~., data = loan)
+
+summary(lm.testmodel)
+
 
 
 ######################################################################################
