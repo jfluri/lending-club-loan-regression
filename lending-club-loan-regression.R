@@ -361,25 +361,8 @@ loan_test[is.na(loan_test[,41]), 41] <- Mode(loan[,41])
 
 
 ######################################################################################
-# ATTRIBUTE IMPORTANCE
+# ATTRIBUTE IMPORTANCE / FEATURE SELECTION
 ######################################################################################
-# Overview of possibilities: https://www.linkedin.com/pulse/how-find-most-important-variables-r-amit-jain/
-# Getting the attribute importance of variables in our dataset
-
-
-# fit the random forest with default parameter
-regressor <- randomForest(int_rate ~ . , data = loan, importance=TRUE, prOximity=TRUE) #,na.action=na.roughfix 
-
-# get variable importance, based on mean decrease in accuracy
-caret::varImp(regressor) 
-
-# conditional=True, adjusts for correlations between predictors
-caret::varImp(regressor, conditional=TRUE) 
-
-# scale = FALSE doesn't scale the results to 100
-caret::varImp(regressor, scale = FALSE)
-
-
 
 #function to get all numerical variables
 num_vars <- 
@@ -402,9 +385,7 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6) #prints correlation
 
 
-######################################################################################
-# Feature selection
-######################################################################################
+
 #removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
                                total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
@@ -424,6 +405,14 @@ loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq,
                                          collections_12_mths_ex_med, 
                                          collection_recovery_fee, 
                                          total_rec_late_fee, pub_rec, delinq_2yrs))
+
+
+# Getting the attribute importance of variables in our dataset
+
+lm.testmodel = lm(int_rate~., data = loan)
+
+summary(lm.testmodel)
+
 
 
 ######################################################################################
@@ -632,12 +621,15 @@ prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
 # alpha - mixing percentage (alpha = 0 (ridge regression) / alpha = 1 (lasso regression))
 # lambda - regularization tuning parameter
 
-#### Ridge Regression
 # 10-fold cross validation (temporary reduced to 5 folds)
 validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
 
 # set random lambdas between 5 and -5
 lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
+
+##########  
+### Ridge Regression Model
+##########  
 
 # set seed again
 set.seed(1)
@@ -645,7 +637,7 @@ set.seed(1)
 # creat the model with lasso regression
 # The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
 model_ridge <- train(int_rate ~ .,
-                     data=loan.Train,
+                     data=loan.train,
                      preProcess=c("center","scale"),
                      method="glmnet",
                      tuneGrid=expand.grid(alpha=0, lambda=lambdas),
@@ -656,22 +648,20 @@ model_ridge <- train(int_rate ~ .,
 coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
 
 ### Prediction against the testdata
-prediction_ridge <- predict(model_ridge, newdata=loan.Test)
+prediction_ridge <- predict(model_ridge, newdata=loan.test)
 
-prediction_ridge_perf <- data.frame(RMSE=RMSE(prediction_ridge, loan.Test$int_rate),
-                                    RSquared=R2(prediction_ridge, loan.Test$int_rate))
+prediction_perf <- data.frame(Model="Ridge",
+                              RMSE=RMSE(prediction_ridge, loan.test$int_rate),
+                              RSquared=R2(prediction_ridge, loan.test$int_rate))
 
 
-#### LASSO Regression
+##########  
+### Lasso Regression Model
+##########  
+
 # Important to avoid overfitting
 # Important to select only the important predictor variables
 
-
-# 10-fold cross validation (temporary reduced to 5 folds)
-validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
-
-# set random lambdas between 5 and -5
-lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 
 # set seed again
 set.seed(1)
@@ -679,7 +669,7 @@ set.seed(1)
 # creat the model with lasso regression
 # The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
 model_lasso <- train(int_rate ~ .,
-                     data=loan.Train,
+                     data=loan.train,
                      preProcess=c("center","scale"),
                      method="glmnet",
                      tuneGrid=expand.grid(alpha=1, lambda=lambdas),
@@ -692,19 +682,13 @@ model_lasso$bestTune
 # analyze which attributes are removed from the model
 coef(model_lasso$finalModel, model_lasso$bestTune$lambda) #Attributes with the value 0 are removed from the model
 
-# Show the most important attributes
-varImp(model_lasso)
-ggplot(varImp(model_lasso))
-
 
 ### Prediction against the testdata
-prediction_lasso <- predict(model_lasso, newdata=loan.Test)
+prediction_lasso <- predict(model_lasso, newdata=loan.test)
 
-prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_rate),
-                                    RSquared=R2(prediction_lasso, loan.Test$int_rate))
-
-
-
+prediction_perf <- prediction_perf %>% add_row(Model="Lasso",
+                           RMSE=RMSE(prediction_lasso, loan.test$int_rate),
+                           RSquared=R2(prediction_lasso, loan.test$int_rate))
 
 
 ######################################################################################
