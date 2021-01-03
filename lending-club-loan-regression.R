@@ -711,6 +711,14 @@ prediction_lasso_perf <- data.frame(RMSE=RMSE(prediction_lasso, loan.Test$int_ra
 # Assignment 2: Classification by Neural Networks
 ######################################################################################
 
+# store complete training data set for later use with k-fold cross validation
+nn.num.loan.k <- nn.num.loan.train
+nn.sc0.loan.k <- nn.sc0.loan.train
+nn.sc01.loan.k <- nn.sc01.loan.train
+
+nn.loan.k_y <- nn.loan.train_y
+
+
 # setting apart the validation set
 nn.val_indices <- sample(nrow(nn.num.loan.train),nrow(nn.num.loan.train)*0.3) # indices of a validation data (30% of training data)
 
@@ -728,40 +736,194 @@ nn.sc01.loan.train <- nn.sc01.loan.train[-nn.val_indices,]
 nn.loan.train_y <- nn.loan.train_y[-nn.val_indices] # training label (loan_status)
 
 
+
 set.seed(1)
 # defining the network
 network <- keras_model_sequential() %>%
   layer_dense(units = 16, activation = "relu", input_shape = c(26)) %>%
   layer_dense(units = 16, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
-  #layer_dense(units = 128, activation = "relu") %>%
   layer_dense(units = 1, activation = "sigmoid")
   #layer_dense(units = 2, activation = "softmax")
 
 # defining the optimizer and loss function
 network %>% compile(
-  #optimizer = "rmsprop",
-  optimizer = optimizer_rmsprop(lr = 1e-4),
+  optimizer = optimizer_adam(lr = 1e-2),
   loss = "binary_crossentropy",
-  #loss = "mse",
   metrics = c("accuracy")
 )
 
 # let it run
 history <- network %>% fit(
   nn.sc01.loan.train,
+  #nn.sc0.loan.train,
+  #nn.num.loan.train,
   nn.loan.train_y,
   epochs = 25,
   batch_size = 512,
   validation_data = list(nn.sc01.loan.val, nn.loan.val_y)
+  #validation_data = list(nn.sc0.loan.val, nn.loan.val_y)
+  #validation_data = list(nn.num.loan.val, nn.loan.val_y)
 )
 
-network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y)
+network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y) # accuracy 0.9738
+#network %>% evaluate(nn.sc0.loan.test, nn.loan.test_y) # accuracy 0.9703
+#network %>% evaluate(nn.num.loan.test, nn.loan.test_y) # accuracy 0.8904
 
+
+
+# define loop variables
+lv_unit <- c(2,4,8,16,32,64,128,256) #8
+lv_optimizer <- c(optimizer_rmsprop(lr = 1e-1),
+                  optimizer_rmsprop(lr = 1e-2),
+                  optimizer_rmsprop(lr = 1e-3),
+                  optimizer_rmsprop(lr = 1e-4),
+                  optimizer_adam(lr = 1e-1),
+                  optimizer_adam(lr = 1e-2),
+                  optimizer_adam(lr = 1e-3),
+                  optimizer_adam(lr = 1e-4),
+                  optimizer_nadam(lr = 1e-1),
+                  optimizer_nadam(lr = 1e-2),
+                  optimizer_nadam(lr = 1e-3),
+                  optimizer_nadam(lr = 1e-4) #12
+                  )
+lv_activation <- c("relu","selu","elu") #3
+# 8*12*3 = 288
+
+
+results <- data.frame()
+i <- 1
+
+for(i_unit in lv_unit) {
+  for(i_optimizer in 1:12){
+    for(i_activation in 1:3){
+      
+      set.seed(1)
+      # defining the network
+      network <- keras_model_sequential() %>%
+        layer_dense(units = i_unit, activation = lv_activation[i_activation], input_shape = c(26)) %>%
+      
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #2
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #3
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #4
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #5
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #6
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #7
+        layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #8
+        
+        layer_dense(units = 1, activation = "sigmoid")
+      
+      # defining the optimizer and loss function
+      network %>% compile(
+        optimizer = lv_optimizer[[i_optimizer]],
+        loss = "binary_crossentropy",
+        metrics = c("accuracy")
+      )
+      
+      # let it run
+      history <- network %>% fit(
+        nn.sc01.loan.train,
+        nn.loan.train_y,
+        epochs = 25,
+        batch_size = 512,
+        validation_data = list(nn.sc01.loan.val, nn.loan.val_y)
+      )
+      
+      tst <- network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y)
+      
+      result <- data.frame(
+        row.names = i,
+        layers = 8,
+        units = i_unit,
+        optimizer = i_optimizer,
+        activation = lv_activation[i_activation],
+        epoch = 25,
+        
+        loss = tst[1],
+        accuracy = tst[2]
+      )
+      results <- rbind(results,result)
+      print(result)
+      i <- i + 1
+    }
+  }
+}
+write.csv(results,"results8.csv", row.names = FALSE) #todo: results2: layers = 2
+
+
+
+# K-Fold cross validation with K = 10
+# the following code was run and documented for the following scenarios:
+#
+# hidden layers | units per layer   | optimizer     | activation function
+# 6             | 128               | adam lr=1e-3  | elu
+# 3             | 32                | adam lr=1e-2  | elu
+# 4             | 256               | adam lr=1e-3  | elu
+# 5             | 256               | adam lr=1e-3  | elu
+# 5             | 256               | adam lr=1e-3  | relu
+
+set.seed(1)
+
+build_model <- function() {
+  model <- keras_model_sequential() %>%
+    layer_dense(units = 256, activation = "relu", input_shape = c(26)) %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 1, activation = "sigmoid")
+  
+  model %>% compile(
+    optimizer = optimizer_adam(lr = 1e-3),
+    loss = "binary_crossentropy",
+    metrics = c("accuracy")
+  )
+}
+
+
+k <- 10
+indices <- sample(1:nrow(nn.sc01.loan.k))
+folds <- cut(indices, breaks = k, labels = FALSE)
+
+num_epochs <- 150
+all_scores <- c()
+all_accuracy_histories <- NULL
+for(i in 1:k){
+  cat("processing fold #", i, "\n")
+  
+  # Prepare the validation data: data from partition # k
+  cat("    prepare data for fold #", i, "\n")
+  val_indices <- which(folds == i, arr.ind = TRUE) 
+  val_data <- nn.sc01.loan.k[val_indices,]
+  val_targets <- nn.loan.k_y[val_indices]
+  
+  # Prepare the training data: data from all other partitions
+  partial_train_data <- nn.sc01.loan.k[-val_indices,]
+  partial_train_targets <- nn.loan.k_y[-val_indices]
+  
+  # Build the Keras model (already compiled)
+  cat("    build model for fold #", i, "\n")
+  model <- build_model()
+  
+  # Train the model
+  cat("    train model for fold #", i, "\n")
+  history <- model %>% fit(
+    partial_train_data, partial_train_targets,
+    validation_data = list(val_data, val_targets),
+    epochs = num_epochs, batch_size = 512
+  )
+  accuracy_history <- history$metrics$val_accuracy
+  all_accuracy_histories <- rbind(all_accuracy_histories, accuracy_history)
+}
+
+
+# compute the average of the per-epoch accuracy for all folds:
+average_accuracy_history <- data.frame(
+  epoch = seq(1:ncol(all_accuracy_histories)),
+  validation_accuracy = apply(all_accuracy_histories, 2, mean)
+)
+
+average_accuracy_history[which.max(average_accuracy_history$validation_accuracy),]
+
+ggplot(average_accuracy_history, aes(x = epoch, y = validation_accuracy)) + geom_smooth()
 
 
