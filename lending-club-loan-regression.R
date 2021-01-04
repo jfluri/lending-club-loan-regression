@@ -389,12 +389,12 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 #removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
                                total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
-                               total_acc, recoveries)) 
+                               total_acc, recoveries, issue_d, last_pymnt_d )) 
 
 loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, 
                                          total_pymnt, total_pymnt_inv, out_prncp,
                                          total_rec_prncp, revol_bal, total_acc, 
-                                         recoveries)) 
+                                         recoveries, issue_d, last_pymnt_d )) 
 
 #removes values that have a high percentage of zeros
 loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, 
