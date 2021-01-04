@@ -555,21 +555,21 @@ for(i in 1:length(nn.num.loan.test[1,])){ #scale Test data by Training data valu
 mymodel <- lm(int_rate~.,data=loan.train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
-BIC(mymodel) #2475357
+BIC(mymodel) #2479945
 
 #Remove variables with less or no significance due to linear model
 #loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
 mymodel_fixed1 <- lm(int_rate~. -addr_state,data=loan.train)
 summary(mymodel_fixed1)
-BIC(mymodel_fixed1) #2475131
+BIC(mymodel_fixed1) #2479704
 
 mymodel_fixed2 <- lm(int_rate~. -home_ownership,data=loan.train)
 summary(mymodel_fixed2)
-BIC(mymodel_fixed2) #2475575
+BIC(mymodel_fixed2) #2480174
 
 mymodel_fixed3 <- lm(int_rate~. -home_ownership -addr_state,data=loan.train)
 summary(mymodel_fixed3)
-BIC(mymodel_fixed3) #2475335
+BIC(mymodel_fixed3) #2479925
 
 #remove(mymodel_fixed7)
 
