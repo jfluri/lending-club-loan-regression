@@ -552,38 +552,27 @@ for(i in 1:length(nn.num.loan.test[1,])){ #scale Test data by Training data valu
 ########## LINEAR REGRESSION MODELS / ANALYSIS ##########
 
 #get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan.Train)
+mymodel <- lm(int_rate~.,data=loan.train)
 ourmodels <- list(mymodel)
 summary(ourmodels[[1]])
-BIC(mymodel) #2355588
+BIC(mymodel) #2475357
 
 #Remove variables with less or no significance due to linear model
 #loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
-mymodel_fixed <- lm(int_rate~. -earliest_cr_line,data=loan.Train)
-summary(mymodel_fixed)
-BIC(mymodel_fixed) #2356292
+mymodel_fixed1 <- lm(int_rate~. -addr_state,data=loan.train)
+summary(mymodel_fixed1)
+BIC(mymodel_fixed1) #2475131
 
-mymodel_fixed2 <- lm(int_rate~. -earliest_cr_line -addr_state,data=loan.Train)
+mymodel_fixed2 <- lm(int_rate~. -home_ownership,data=loan.train)
 summary(mymodel_fixed2)
-BIC(mymodel_fixed2) #2355850
+BIC(mymodel_fixed2) #2475575
 
-mymodel_fixed3 <- lm(int_rate~. -earliest_cr_line -addr_state -home_ownership,data=loan.Train)
+mymodel_fixed3 <- lm(int_rate~. -home_ownership -addr_state,data=loan.train)
 summary(mymodel_fixed3)
-BIC(mymodel_fixed3) #2356503
+BIC(mymodel_fixed3) #2475335
 
-remove(mymodel_fixed5)
-mymodel_fixed4 <- lm(int_rate~.-earliest_cr_line -addr_state -installment,data=loan.Train)
-summary(mymodel_fixed4)
-BIC(mymodel_fixed4) #2355847
+#remove(mymodel_fixed7)
 
-mymodel_fixed5 <- lm(int_rate~. -addr_state -installment,data=loan.Train)
-summary(mymodel_fixed5)
-BIC(mymodel_fixed5) #2355151
-anova(mymodel_fixed5)
-
-mymodel_fixed6 <- lm(int_rate~. -out_prncp_inv -addr_state -installment,data=loan.Train)
-summary(mymodel_fixed6)
-BIC(mymodel_fixed6) #2355703
 
 
 #vif(ourmodels[[1]])
