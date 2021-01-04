@@ -632,8 +632,8 @@ prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
 # alpha - mixing percentage (alpha = 0 (ridge regression) / alpha = 1 (lasso regression))
 # lambda - regularization tuning parameter
 
-# 10-fold cross validation (temporary reduced to 5 folds)
-validationspec <- trainControl(method = "cv" , number = 5 , savePredictions = "all")
+# 10-fold cross validation
+validationspec <- trainControl(method = "cv" , number = 10 , savePredictions = "all")
 
 # set random lambdas between 5 and -5
 lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
@@ -641,6 +641,7 @@ lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 ##########  
 ### Ridge Regression Model
 ##########  
+
 
 # set seed again
 set.seed(1)
@@ -670,10 +671,6 @@ prediction_perf <- data.frame(Model="Ridge",
 ### Lasso Regression Model
 ##########  
 
-# Important to avoid overfitting
-# Important to select only the important predictor variables
-
-
 # set seed again
 set.seed(1)
 
@@ -686,9 +683,6 @@ model_lasso <- train(int_rate ~ .,
                      tuneGrid=expand.grid(alpha=1, lambda=lambdas),
                      trControl=validationspec,
                      na.action=na.omit)
-
-# find best tuning parameters for alpha and lambda
-model_lasso$bestTune
 
 # analyze which attributes are removed from the model
 coef(model_lasso$finalModel, model_lasso$bestTune$lambda) #Attributes with the value 0 are removed from the model
