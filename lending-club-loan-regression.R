@@ -414,7 +414,6 @@ lm.testmodel = lm(int_rate~., data = loan)
 summary(lm.testmodel)
 
 
-
 ######################################################################################
 # DATA SET ORGANIZATION (training & test) for regression models RM and neural networks NN
 # The data for neural networks is further processed for the second assignment. Do not use for regression models.
@@ -586,33 +585,19 @@ summary(mymodel_fixed6)
 BIC(mymodel_fixed6) #2355703
 
 
-#vif(ourmodels[[1]])
-#plot(ourmodels[[1]])
-# Notice the points fall along a line in the middle of the graph, but curve off in the extremities.
-# Normal Q-Q plots that exhibit this behavior usually mean your data have more extreme values than
-# would be expected if they truly came from a Normal distribution.
+model_linear = lm(int_rate~., data = loan.train)
+summary(lm.testmodel)
 
-mymodel <- lm(int_rate~grade,data=loan.Train)
-ourmodels[[2]] <- mymodel
-summary(ourmodels[[2]])
-par(mfrow=c(2,2))
-plot(ourmodels[[2]])
+### Prediction against the testdata
+prediction_lm <- predict(model_linear, newdata=loan.test)
 
-#predict against test data
-pred <- predict(mymodel, newdata = loan.Test)
+prediction_perf <- data.frame(Model="Linear",
+                               RMSE=RMSE(prediction_lm, loan.test$int_rate),
+                               RSquared=R2(prediction_lm, loan.test$int_rate))
 
-par(mfrow=c(1,1))
-plot(loan.Test$int_rate, pred)
-
-prediction_model_perf <- data.frame(RMSE=RMSE(pred, loan.Test$int_rate),
-                                    RSquared=R2(pred, loan.Test$int_rate))
-
-
-
-#This stepAIC approach runs quite long and does not provide a good model
-#fit <- lm(int_rate~., data=loan[complete.cases(loan),])
-#step <- stepAIC(fit, direction = "both")
-#step$anova
+# prediction_perf <- prediction_perf %>% add_row(Model="Linear3",
+#                                               RMSE=RMSE(prediction_lm, loan.test$int_rate),
+#                                               RSquared=R2(prediction_lm, loan.test$int_rate))
 
 
 ##########  Ridge & Lasso Regression ########## 
@@ -627,6 +612,7 @@ validationspec <- trainControl(method = "cv" , number = 10 , savePredictions = "
 # set random lambdas between 5 and -5
 lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 
+
 ##########  
 ### Ridge Regression Model
 ##########  
@@ -635,7 +621,7 @@ lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 # set seed again
 set.seed(1)
 
-# creat the model with lasso regression
+# creat the model with ridge regression
 # The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
 model_ridge <- train(int_rate ~ .,
                      data=loan.train,
@@ -651,7 +637,7 @@ coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
 ### Prediction against the testdata
 prediction_ridge <- predict(model_ridge, newdata=loan.test)
 
-prediction_perf <- data.frame(Model="Ridge",
+prediction_perf <- prediction_perf %>% add_row(Model="Ridge",
                               RMSE=RMSE(prediction_ridge, loan.test$int_rate),
                               RSquared=R2(prediction_ridge, loan.test$int_rate))
 
