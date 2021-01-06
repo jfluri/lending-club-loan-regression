@@ -385,16 +385,19 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
                        names = TRUE, cutoff = .6) #prints correlation
 
 
-
 #removes values that have a correlation
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
                                total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
-                               total_acc, recoveries, issue_d, last_pymnt_d )) 
+                               total_acc, recoveries
+                               #, issue_d, last_pymnt_d 
+                               )) 
 
 loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, 
                                          total_pymnt, total_pymnt_inv, out_prncp,
                                          total_rec_prncp, revol_bal, total_acc, 
-                                         recoveries, issue_d, last_pymnt_d )) 
+                                         recoveries 
+                                         #, issue_d, last_pymnt_d 
+                                         )) 
 
 #removes values that have a high percentage of zeros
 loan <- subset(loan, select=-c(tot_coll_amt, acc_now_delinq, collections_12_mths_ex_med, 
@@ -412,6 +415,8 @@ loan_test <- subset(loan_test, select=-c(tot_coll_amt, acc_now_delinq,
 lm.testmodel = lm(int_rate~., data = loan)
 
 summary(lm.testmodel)
+
+
 
 
 ######################################################################################
@@ -753,7 +758,7 @@ for(i_unit in lv_unit) {
       set.seed(1)
       # defining the network
       network <- keras_model_sequential() %>%
-        layer_dense(units = i_unit, activation = lv_activation[i_activation], input_shape = c(26)) %>%
+        layer_dense(units = i_unit, activation = lv_activation[i_activation], input_shape = c(24)) %>%
       
         layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #2
         layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #3
@@ -818,7 +823,7 @@ set.seed(1)
 
 build_model <- function() {
   model <- keras_model_sequential() %>%
-    layer_dense(units = 256, activation = "relu", input_shape = c(26)) %>%
+    layer_dense(units = 256, activation = "relu", input_shape = c(24)) %>%
     layer_dense(units = 256, activation = "relu") %>%
     layer_dense(units = 256, activation = "relu") %>%
     layer_dense(units = 256, activation = "relu") %>%
