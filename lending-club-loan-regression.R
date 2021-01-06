@@ -415,6 +415,58 @@ summary(lm.testmodel)
 
 
 ######################################################################################
+# OUTLIERS treatment
+######################################################################################
+
+# plot(int_rate~.,loan.train)
+
+# The following predictors show extreme outliers. The outliers are removed from the dataset.
+# annual_inc
+# dti
+# open_acc
+# revol_util
+# out_prncp_inv
+# tot_cur_bal
+# total_rev_hi_lim
+
+# annual_inc
+# Q <- quantile(loan$annual_inc, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$annual_inc)
+# loan <- subset(loan, loan$annual_inc > (Q[1] - 1.5*iqr) & loan$annual_inc < (Q[2]+1.5*iqr))
+
+# dti
+# Q <- quantile(loan$dti, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$dti)
+# loan <- subset(loan, loan$dti > (Q[1] - 1.5*iqr) & loan$dti < (Q[2]+1.5*iqr))
+
+# open_acc
+# Q <- quantile(loan$open_acc, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$open_acc)
+# loan <- subset(loan, loan$open_acc > (Q[1] - 1.5*iqr) & loan$open_acc < (Q[2]+1.5*iqr))
+
+# revol_util
+# Q <- quantile(loan$revol_util, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$revol_util)
+# loan <- subset(loan, loan$revol_util > (Q[1] - 1.5*iqr) & loan$revol_util < (Q[2]+1.5*iqr))
+
+# out_prncp_inv
+# Q <- quantile(loan$out_prncp_inv, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$out_prncp_inv)
+# loan <- subset(loan, loan$out_prncp_inv > (Q[1] - 1.5*iqr) & loan$out_prncp_inv < (Q[2]+1.5*iqr))
+
+# tot_cur_bal
+# Q <- quantile(loan$tot_cur_bal, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$tot_cur_bal)
+# loan <- subset(loan, loan$tot_cur_bal > (Q[1] - 1.5*iqr) & loan$tot_cur_bal < (Q[2]+1.5*iqr))
+
+# total_rev_hi_lim
+# Q <- quantile(loan$total_rev_hi_lim, probs=c(.25, .75), na.rm = FALSE)
+# iqr <- IQR(loan$total_rev_hi_lim)
+# loan <- subset(loan, loan$total_rev_hi_lim > (Q[1] - 1.5*iqr) & loan$total_rev_hi_lim < (Q[2]+1.5*iqr))
+
+
+
+######################################################################################
 # DATA SET ORGANIZATION (training & test) for regression models RM and neural networks NN
 # The data for neural networks is further processed for the second assignment. Do not use for regression models.
 # 
@@ -518,78 +570,52 @@ for(i in 1:length(nn.num.loan.test[1,])){ #scale Test data by Training data valu
 
 
 
+######################################################################################
+# SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING
+######################################################################################
+
+##########  Forward / Backward Selection ########## 
+
+set.seed(1)
+
+# Set up repeated k-fold cross-validation
+validationspec <- trainControl(method = "cv" , number = 10 , savePredictions = "all")
+
+# Train the model (forward selection)
+model_forwardselect <- train(int_rate ~., data = loan.train,
+                             method = "leapForward", 
+                             tuneGrid = data.frame(nvmax = 1:100),
+                             trControl = validationspec
+)
+model_forwardselect$results
+model_forwardselect$bestTune
 
 
-########## SUBSET SELECTION / FEATURE ANALYSIS & ENGINEERING ##########
+# Train the model (backward selection)
+model_backwardselect <- train(int_rate ~., data = loan.train,
+                              method = "leapBackward", 
+                              tuneGrid = data.frame(nvmax = 1:100),
+                              trControl = validationspec
+)
+model_backwardselect$results
+model_backwardselect$bestTune
 
-# TODO:check last semester approach: which attributes are most important for prediction?
+######################################################################################
+# Default Linear Model
+######################################################################################
 
-# Best Subset Selection
+model_lm_default <- lm(int_rate~.,data=loan.train)
 
-# We are telling R that we have a really big dataset 
-#sets <- regsubsets(int_rate ~ ., loan, nvmax = 12, really.big=T)
-# TODO : Test again if it works after removing stuff
+prediction_lm_default <- predict(model_lm_default, newdata=loan.test)
 
-
-# Forward Stepwise Selection
-#sets_FWS <- regsubsets(int_rate ~ ., loan, nvmax = 12, method = "forward")
-# => ??
-
-
-# Backward Stepwise Selection
-#sets_BWS <- regsubsets(int_rate ~ ., loan, nvmax = 5, method = "backward")
-# => ??
-
-# Hybrid Stepwise Methods(?)
-
-
-# do a feature selection of (5-10) attributes to get a meaningful result 
-# TODO : Experiment
-# TODO : make data frame (some sort of storage) to save the results of the different feature sets. 
+prediction_perf <- data.frame(Model="Linear_Default",
+                               RMSE=RMSE(prediction_lm_default, loan.test$int_rate),
+                               RSquared=R2(prediction_lm_default, loan.test$int_rate))
 
 
-########## LINEAR REGRESSION MODELS / ANALYSIS ##########
-
-#get linear model for all variables
-mymodel <- lm(int_rate~.,data=loan.train)
-ourmodels <- list(mymodel)
-summary(ourmodels[[1]])
-BIC(mymodel) #2479945
-
-#Remove variables with less or no significance due to linear model
-#loan.Train <- subset(loan.Train, select=-c(next_pymnt_d, earliest_cr_line, addr_state, home_ownership))
-mymodel_fixed1 <- lm(int_rate~. -addr_state,data=loan.train)
-summary(mymodel_fixed1)
-BIC(mymodel_fixed1) #2479704
-
-mymodel_fixed2 <- lm(int_rate~. -home_ownership,data=loan.train)
-summary(mymodel_fixed2)
-BIC(mymodel_fixed2) #2480174
-
-mymodel_fixed3 <- lm(int_rate~. -home_ownership -addr_state,data=loan.train)
-summary(mymodel_fixed3)
-BIC(mymodel_fixed3) #2479925
-
-#remove(mymodel_fixed7)
-
-
-
-model_linear = lm(int_rate~., data = loan.train)
-summary(lm.testmodel)
-
-### Prediction against the testdata
-prediction_lm <- predict(model_linear, newdata=loan.test)
-
-prediction_perf <- data.frame(Model="Linear",
-                               RMSE=RMSE(prediction_lm, loan.test$int_rate),
-                               RSquared=R2(prediction_lm, loan.test$int_rate))
-
-# prediction_perf <- prediction_perf %>% add_row(Model="Linear3",
-#                                               RMSE=RMSE(prediction_lm, loan.test$int_rate),
-#                                               RSquared=R2(prediction_lm, loan.test$int_rate))
-
-
-##########  Ridge & Lasso Regression ########## 
+######################################################################################
+# Ridge & Lasso Regression
+######################################################################################
 
 # Tuning parameters
 # alpha - mixing percentage (alpha = 0 (ridge regression) / alpha = 1 (lasso regression))
@@ -611,7 +637,7 @@ lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 set.seed(1)
 
 # creat the model with ridge regression
-# The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
+# The model tries to minimise the RMSE --> which lambda has the lowest RMSE
 model_ridge <- train(int_rate ~ .,
                      data=loan.train,
                      preProcess=c("center","scale"),
@@ -620,13 +646,13 @@ model_ridge <- train(int_rate ~ .,
                      trControl=validationspec,
                      na.action=na.omit)
 
-# Wheightening of the model
+# Wheightening of the attributes 
 coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
 
 ### Prediction against the testdata
 prediction_ridge <- predict(model_ridge, newdata=loan.test)
 
-prediction_perf <- prediction_perf %>% add_row(Model="Ridge",
+prediction_perf <- prediction_perf %>% add_row(Model="Linear_Ridge",
                               RMSE=RMSE(prediction_ridge, loan.test$int_rate),
                               RSquared=R2(prediction_ridge, loan.test$int_rate))
 
@@ -639,7 +665,7 @@ prediction_perf <- prediction_perf %>% add_row(Model="Ridge",
 set.seed(1)
 
 # creat the model with lasso regression
-# The model tries to minimise the RMSE --> which lambda has the lowest RMSE (can be visualy plotted)
+# The model tries to minimise the RMSE --> which lambda has the lowest RMSE
 model_lasso <- train(int_rate ~ .,
                      data=loan.train,
                      preProcess=c("center","scale"),
@@ -648,14 +674,14 @@ model_lasso <- train(int_rate ~ .,
                      trControl=validationspec,
                      na.action=na.omit)
 
-# analyze which attributes are removed from the model
+# analyze which attributes (predictors) are removed from the model
 coef(model_lasso$finalModel, model_lasso$bestTune$lambda) #Attributes with the value 0 are removed from the model
 
 
 ### Prediction against the testdata
 prediction_lasso <- predict(model_lasso, newdata=loan.test)
 
-prediction_perf <- prediction_perf %>% add_row(Model="Lasso",
+prediction_perf <- prediction_perf %>% add_row(Model="Linear_Lasso",
                            RMSE=RMSE(prediction_lasso, loan.test$int_rate),
                            RSquared=R2(prediction_lasso, loan.test$int_rate))
 
