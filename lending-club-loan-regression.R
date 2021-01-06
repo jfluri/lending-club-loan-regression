@@ -389,14 +389,14 @@ caret::findCorrelation(cor(loan[, num_vars], use = "complete.obs"),
 loan <- subset(loan, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, total_pymnt, 
                                total_pymnt_inv, out_prncp, total_rec_prncp, revol_bal, 
                                total_acc, recoveries
-                               #, issue_d, last_pymnt_d 
+                               , issue_d, last_pymnt_d #do not remove those 2 features for NN!
                                )) 
 
 loan_test <- subset(loan_test, select=-c(loan_amnt, funded_amnt, funded_amnt_inv, 
                                          total_pymnt, total_pymnt_inv, out_prncp,
                                          total_rec_prncp, revol_bal, total_acc, 
                                          recoveries 
-                                         #, issue_d, last_pymnt_d 
+                                         , issue_d, last_pymnt_d #do not remove those 2 features for NN!
                                          )) 
 
 #removes values that have a high percentage of zeros
@@ -527,7 +527,7 @@ sc01.loan.test <- num.loan.test
 for(i in 1:length(num.loan.test[1,])){ #scale Test data by Training data values
   sc01.loan.test[,i] <- (num.loan.test[,i] - min[i]) / diff(range[,i])
 }
-#summary(sc01.loan.test)
+summary(sc01.loan.test)
 
 
 
@@ -695,7 +695,7 @@ prediction_perf <- prediction_perf %>% add_row(Model="Linear_Lasso",
 # Assignment 2: Classification by Neural Networks
 ######################################################################################
 
-# store complete training data set for later use with k-fold cross validation
+# store complete training data set for later use with k-fold cross validation and for creation of the final model
 nn.num.loan.k <- nn.num.loan.train
 nn.sc0.loan.k <- nn.sc0.loan.train
 nn.sc01.loan.k <- nn.sc01.loan.train
@@ -784,7 +784,7 @@ for(i_unit in lv_unit) {
       set.seed(1)
       # defining the network
       network <- keras_model_sequential() %>%
-        layer_dense(units = i_unit, activation = lv_activation[i_activation], input_shape = c(24)) %>%
+        layer_dense(units = i_unit, activation = lv_activation[i_activation], input_shape = c(26)) %>%
       
         layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #2
         layer_dense(units = i_unit, activation = lv_activation[i_activation]) %>% #3
@@ -849,15 +849,13 @@ set.seed(1)
 
 build_model <- function() {
   model <- keras_model_sequential() %>%
-    layer_dense(units = 256, activation = "relu", input_shape = c(24)) %>%
-    layer_dense(units = 256, activation = "relu") %>%
-    layer_dense(units = 256, activation = "relu") %>%
-    layer_dense(units = 256, activation = "relu") %>%
-    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 32, activation = "elu", input_shape = c(26)) %>%
+    layer_dense(units = 32, activation = "elu") %>%
+    layer_dense(units = 32, activation = "elu") %>%
     layer_dense(units = 1, activation = "sigmoid")
   
   model %>% compile(
-    optimizer = optimizer_adam(lr = 1e-3),
+    optimizer = optimizer_adam(lr = 1e-2),
     loss = "binary_crossentropy",
     metrics = c("accuracy")
   )
@@ -868,7 +866,7 @@ k <- 10
 indices <- sample(1:nrow(nn.sc01.loan.k))
 folds <- cut(indices, breaks = k, labels = FALSE)
 
-num_epochs <- 150
+num_epochs <- 500
 all_scores <- c()
 all_accuracy_histories <- NULL
 for(i in 1:k){
@@ -909,5 +907,40 @@ average_accuracy_history <- data.frame(
 average_accuracy_history[which.max(average_accuracy_history$validation_accuracy),]
 
 ggplot(average_accuracy_history, aes(x = epoch, y = validation_accuracy)) + geom_smooth()
+
+
+
+# Final Model
+set.seed(1)
+# defining the network
+network <- keras_model_sequential() %>%
+  layer_dense(units = 32, activation = "elu", input_shape = c(26)) %>%
+  layer_dense(units = 32, activation = "elu") %>%
+  layer_dense(units = 32, activation = "elu") %>%
+  layer_dense(units = 1, activation = "sigmoid")
+
+# defining the optimizer and loss function
+network %>% compile(
+  optimizer = optimizer_adam(lr = 1e-2),
+  loss = "binary_crossentropy",
+  metrics = c("accuracy")
+)
+
+# let it run
+history <- network %>% fit(
+  nn.sc01.loan.k,
+  nn.loan.k_y,
+  epochs = 250,
+  batch_size = 512
+)
+
+network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y)
+
+save_model_tf(object = network, filepath = "MODEL.TF") #save the model using TF
+save_model_hdf5(object = network, filepath = "MODEL.HDF5") #save the model using HDF5
+save(nn.sc01.loan.k, file = "train_data.RDATA") #save train data
+save(nn.loan.k_y, file = "train_targets.RDATA") #save train targets
+save(nn.sc01.loan.test, file = "test_data.RDATA") #save test data
+save(nn.loan.test_y, file = "test_target.RDATA") #save test targets
 
 
