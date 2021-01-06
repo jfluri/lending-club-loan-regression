@@ -944,3 +944,16 @@ save(nn.sc01.loan.test, file = "test_data.RDATA") #save test data
 save(nn.loan.test_y, file = "test_target.RDATA") #save test targets
 
 
+# Evaluate the model on the training data
+train_results <- network %>% evaluate(nn.sc01.loan.k, nn.loan.k_y, verbose = 0)
+cat("Training results:")
+train_results
+
+# Evaluate the model on the testing data
+test_results <- network %>% evaluate(nn.sc01.loan.test, nn.loan.test_y, verbose = 0)
+cat("Testing results:")
+test_results
+
+main_result <- (train_results[['accuracy']] + test_results[['accuracy']]) / 2
+cat("Main results:")
+main_result
