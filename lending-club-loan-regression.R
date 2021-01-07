@@ -136,8 +136,6 @@ loan.column$NAs <- as.data.frame(sapply(loan, function(x) sum(is.na(x))))[,1]
 # NAs are stored in %
 loan.column$NA_percent <- loan.column$NAs / nrow(loan) 
 
-#TODO : Print overview
-
 #Remove the following columns which have >70% NAs
 # 44: dti_joint	99.9%
 # 43: annual_inc_joint 99.9%
@@ -166,8 +164,6 @@ loan_test <- loan_test[,-c(21,41,43,44,48,49,50,51,52,53,54,55,56,57,58,60,61,62
 
 # 44 Rows leads to 31 NA Values to reach the 70% threshold
 loan$na_count <- apply(loan, 1, function(x) sum(is.na(x)))
-
-# TODO: Show overview
 
 # Highest Values --> 14 NA Values, therefore no general Action required --> na_count column is removed
 loan <- loan[,-c(45)]
@@ -250,7 +246,7 @@ as.data.frame(table(loan$verification_status))
 
 #check the distribution of loan_status
 as.data.frame(table(loan$loan_status)) 
-# TODO: maybe later downsampling according to:
+# maybe later downsampling according to:
 # https://triamus.github.io/project/lending-club-loan-data-in-r/#defining-default
 # punkt 6. careful, we have correlations to other columns.
 
@@ -633,15 +629,15 @@ validationspec <- trainControl(method = "cv" , number = 10 , savePredictions = "
 lambdas <- 10^seq(5, -5, length=100) # create possible lambda values
 
 
-##########  
+###################################################################  
 ### Ridge Regression Model
-##########  
+###################################################################  
 
 
 # set seed again
 set.seed(1)
 
-# creat the model with ridge regression
+# create the model with ridge regression
 # The model tries to minimise the RMSE --> which lambda has the lowest RMSE
 model_ridge <- train(int_rate ~ .,
                      data=loan.train,
@@ -662,9 +658,9 @@ prediction_perf <- prediction_perf %>% add_row(Model="Linear_Ridge",
                               RSquared=R2(prediction_ridge, loan.test$int_rate))
 
 
-##########  
+##################################################################  
 ### Lasso Regression Model
-##########  
+##################################################################  
 
 # set seed again
 set.seed(1)
